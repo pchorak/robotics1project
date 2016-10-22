@@ -1,10 +1,7 @@
-#! /usr/bin/env python
-
 import struct
 import binascii
 
-
-class DobotStatusMessage():
+class StatusMessage():
     def __init__(self):
         pass
 

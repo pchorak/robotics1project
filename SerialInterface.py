@@ -1,28 +1,26 @@
-#! /usr/bin/env python
-
-
 import thread
 import struct
 from collections import deque
 import serial
 import time
-from DobotStatusMessage import DobotStatusMessage
 import binascii
 import datetime
 import sys
+
+import StatusMessage
 
 def f2b(i):
     return struct.pack('<f', i)
 
 
-class DobotSerialInterface:
+class SerialInterface:
 
     serial_connection = None
     read_buffer = deque()
     current_status = None
 
-    MOVE_MODE_JUMP = 0
-    MOVE_MODE_JOINTS = 1  # joints move independent
+    MOVE_MODE_JUMP = 0    # raise, move, then lower arm
+    MOVE_MODE_JOINTS = 1  # joints move independently
     MOVE_MODE_LINEAR = 2  # linear movement
 
     def __init__(self, port_name='/dev/ttyACM0', baud_rate=9600):
@@ -67,7 +65,7 @@ class DobotSerialInterface:
         if not self.is_connected():
             print "No serial connection"
 
-        cmd_str_42 = ['\x00']*DobotStatusMessage.MESSAGE_LENGTH
+        cmd_str_42 = ['\x00']*StatusMessage.MESSAGE_LENGTH
         cmd_str_42[0] = '\xA5'
         cmd_str_42[-1] = '\x5A'
         for i in range(10):
@@ -167,7 +165,7 @@ class DobotSerialInterface:
                 self.read_buffer.append(ascii[2 * i] + ascii[2 * i + 1])
 
             n = len(self.read_buffer)
-            if n < DobotStatusMessage.MESSAGE_LENGTH:
+            if n < StatusMessage.MESSAGE_LENGTH:
                 continue
 
             # should not be triggered
@@ -186,10 +184,10 @@ class DobotSerialInterface:
             # if n-n_cleaned > 0:
             #     print "Removed", (n-n_cleaned), "characters"
 
-            while len(self.read_buffer) >= DobotStatusMessage.MESSAGE_LENGTH:
+            while len(self.read_buffer) >= StatusMessage.MESSAGE_LENGTH:
                 message = list()
                 # print "buffer size", len(self.read_buffer)
-                for i in range(DobotStatusMessage.MESSAGE_LENGTH):
+                for i in range(StatusMessage.MESSAGE_LENGTH):
                     message.append(self.read_buffer.popleft())
 
                 # sanity check
@@ -197,7 +195,7 @@ class DobotSerialInterface:
                     # print "Message was not terminated by '5a', but", message[-1], "ignoring message"
                     continue
 
-                msg = DobotStatusMessage()
+                msg = StatusMessage.StatusMessage()
                 msg.parse_ascii(message)
 
                 # mutex?
@@ -208,10 +206,3 @@ class DobotSerialInterface:
                 cnt += 1
                 # print cnt
 
-
-# def dobot_cmd_send_9():
-#     # global cmd_str_10
-
-#
-#
-# def dobot_cmd_send_10(VelRat=100, AccRat=100):
