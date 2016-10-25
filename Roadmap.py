@@ -41,13 +41,13 @@ class Roadmap:
 
     def __init__(self,sim,n,bounds=DobotModel.limits):
         self.sim = sim
-        self.G = nx.Graph()
         self.generate(n)
 
     def generate(self,n,bounds=DobotModel.limits):
         """
         Generates (or regenerates) the PRM given a target number of samples n 
         """
+        self.G = nx.Graph()
 
         # Sample environment
         ps = self._sample_cs(n,bounds)
