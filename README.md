@@ -19,7 +19,7 @@
 ### Tested Environments ###
 
 * Python 2.7.10 (SciPy 0.13.0b2, Numpy 1.8.0rc1, Matplotlib 1.3.1)
-* Python 2.7.6
+* Python 2.7.6 (SciPy 0.13.3, Numpy 1.8.2, Matplotlib 1.3.1)
 
 ### Unit Tests ###
 
