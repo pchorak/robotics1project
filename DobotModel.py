@@ -4,6 +4,8 @@ import numpy.testing as npt
 
 import math3D
 
+# np.seterr(invalid='ignore')
+
 # Arm parameters
 l1 = 135 # length of arm link 1
 l2 = 160 # length of arm link2 2

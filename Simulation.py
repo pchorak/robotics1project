@@ -6,41 +6,53 @@ from mpl_toolkits.mplot3d import Axes3D
 import intersect
 import DobotModel
 
-plt.ion()
+class Simulation:
+    obstacles = np.array([])
 
-obstacles = np.array([[[230.0,-10,0],[230,10,0],[240,0,200]], \
-    [[230,-10,0],[250,-10,0],[240,0,200]], \
-    [[230,10,0],[250,10,0],[240,0,200]], \
-    [[250,-10,0],[250,10,0],[240,0,200]], \
-    [[-50,-200,-30],[-50, 200,-30],[350,200,-30]], \
-    [[-50,-200,-30],[350,-200,-30],[350,200,-30]]])
+    def __init__(self):
+        plt.ion()
 
-def collision(angles):
-    """
-    Returns whether the arm model intersects any obstacles in a given configuration (psi,th1,th2).
-    """
-    arm = DobotModel.get_mesh(angles)
+    def add_obstacles(self,obs):
+        """
+        Add a triangle mesh to the simulation.
+        """
+        if (obs.shape[1] != 3) or (obs.shape[2] != 3):
+            print "Triangle mesh must be of shape (n,3,3)"
+        elif (len(self.obstacles) == 0):
+            self.obstacles = obs
+        else:
+            self.obstacles = np.vstack((self.obstacles,obs))
 
-    # Check for collisions
-    for Ta in arm:
-        for To in obstacles:
-            if intersect.triangles(Ta,To):
-                return True
-    return False
+    def collision(self,angles):
+        """
+        Returns whether the Dobot intersects any obstacles in a given configuration.
+        """
+        arm = DobotModel.get_mesh(angles)
 
-def display(angles):
-    """
-    Plots wireframe models of the arm and obstacles.
-    """
-    arm = DobotModel.get_mesh(angles)
+        # Check for collisions
+        for Ta in arm:
+            for To in self.obstacles:
+                if intersect.triangles(Ta,To):
+                    return True
+        return False
 
-    fig = plt.gcf()#figure(1)
-    ax = Axes3D(fig)
-    #plt.axis('equal')
-    for Ta in arm:
-        ax.plot(Ta[[0,1,2,0],0],Ta[[0,1,2,0],1],Ta[[0,1,2,0],2],'b')
-    for To in obstacles:
-        ax.plot(To[[0,1,2,0],0],To[[0,1,2,0],1],To[[0,1,2,0],2],'b')
-    plt.xlim([-50,350])
-    plt.ylim([-200,200])
-    plt.show()
+    def display(self,angles):
+        """
+        Plots wireframe models of the Dobot and obstacles.
+        """
+        arm = DobotModel.get_mesh(angles)
+
+        fig = figure()#plt.gcf()
+        ax = Axes3D(fig)
+        #plt.axis('equal')
+        for Ta in arm:
+            ax.plot(Ta[[0,1,2,0],0],Ta[[0,1,2,0],1],Ta[[0,1,2,0],2],'b')
+        for To in self.obstacles:
+            ax.plot(To[[0,1,2,0],0],To[[0,1,2,0],1],To[[0,1,2,0],2],'b')
+        
+        r_max = DobotModel.l1 + DobotModel.l2 + DobotModel.d
+
+        plt.xlim([-np.ceil(r_max/np.sqrt(2)),r_max])
+        plt.ylim([-r_max,r_max])
+        plt.show()
+        return fig

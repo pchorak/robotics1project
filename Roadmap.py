@@ -11,27 +11,47 @@ class Roadmap:
     """
     Probabalistic RoadMap
 
-    Input: n - number of desired samples (in free space)
+    Input: sim - Simulation object to use for collision detection
+           n - number of desired samples (in free space)
+           bounds - array of lower and upper bounds for sampling the workspace (3,2)
 
     Example:
-        import Simulation,Roadmap
-        pi = 3.141592
-        prm = Roadmap.Roadmap(50)
-        path = prm.get_path((pi/4,pi/3,0),(-pi/4,pi/3,0))
-        prm.plot_path(path)
 
-        Simulation.display(path[0])
+    import Simulation
+    import Roadmap
+    import numpy as np
+    table = np.array([[[-245,-345,-30],[-245, 345,-30],[345,345,-30]], \
+        [[-245,-345,-30],[345,-345,-30],[345,345,-30]]])
+    obstacle = np.array([[[230.0,-10,0],[230,10,0],[240,0,200]], \
+        [[230,-10,0],[250,-10,0],[240,0,200]], \
+        [[230,10,0],[250,10,0],[240,0,200]], \
+        [[250,-10,0],[250,10,0],[240,0,200]]])
+    sim = Simulation.Simulation()
+    sim.add_obstacles(table)
+    sim.add_obstacles(obstacle)
+    prm = Roadmap.Roadmap(sim,50)
+    path = prm.get_path((np.pi/4,np.pi/3,0),(-np.pi/4,np.pi/3,0))
+    prm.plot_path(path)
+    # prm.display()
+    # Simulation.display(path[0])
     """
 
     #G - graph of configurations sampled from Qfree
     #tree - KD-tree of positions sampled from workspace 
 
-    def __init__(self,n):
+    def __init__(self,sim,n,bounds=DobotModel.limits):
+        self.sim = sim
         self.G = nx.Graph()
+        self.generate(n)
+
+    def generate(self,n,bounds=DobotModel.limits):
+        """
+        Generates (or regenerates) the PRM given a target number of samples n 
+        """
 
         # Sample environment
-        ps = self._sample_cs(n,DobotModel.limits)
-#       ps = self._sample_ws(n,np.array([[0,300],[-200,200],[0,300]]))
+        ps = self._sample_cs(n,bounds)
+        # ps = self._sample_ws(n,np.array([[0,300],[-200,200],[0,200]]))
 
         self.tree = kdt.KDTree(ps)
 
@@ -68,26 +88,32 @@ class Roadmap:
 
         return path
 
-    def plot_path(path):
+    def plot_path(self,path):
         """
         Plots points for all sampled positions of the end effector and draws lines
         along the path described by the configurations "path".
         """
-        qs = [self.G.node[k]['cfg'] for k in range(len(self.G.node))]
-        ps = np.array([DobotModel.forward_kinematics(q) for q in qs])
-        # ps = [self.tree.data[k] for k in range(len(self.tree.data))]
+        if (len(path) > 0):
+            ps = self.tree.data
 
-        path = np.array([DobotModel.forward_kinematics(q) for q in path])
+            fig = self.sim.display(path[0])
+            path = np.array([DobotModel.forward_kinematics(q) for q in path])
+            fig.axes[0].plot(path[:,0],path[:,1],path[:,2],'r')
+            fig.axes[0].plot(ps[:,0],ps[:,1],ps[:,2],'.g')
+            fig.canvas.draw()
 
-        fig = plt.gcf()
-        ax = Axes3D(fig)
-        for To in obstacles:
-            ax.plot(To[[0,1,2,0],0],To[[0,1,2,0],1],To[[0,1,2,0],2],'b')
-        ax.plot(path[:,0],path[:,1],path[:,2],'r')
+    def display(self):
+        """
+        Display the nodes and edges of the PRM in Cartesian coordinates.
+        """
+        ps = self.tree.data
+        fig = self.sim.display((0,0,0))
+        ax = fig.axes[0]
+        for (pair) in self.G.edges():
+            if (pair[0] < pair[1]): # bidirectional graph so don't plot edges twice
+                ax.plot(ps[pair,0],ps[pair,1],ps[pair,2],'r')
         ax.plot(ps[:,0],ps[:,1],ps[:,2],'.g')
-        plt.xlim([-50,350])
-        plt.ylim([-200,200])
-        plt.show()
+        fig.canvas.draw()
 
     def _connect(self,k,p,knn=5):
         # Attempt to connect a node k (position p) with its k nearest neighbors (knn)
@@ -112,7 +138,7 @@ class Roadmap:
 
         # Test for collisions for each
         for q in qk:
-            if Simulation.collision(q):
+            if self.sim.collision(q):
                 return False
 
         return True
@@ -124,7 +150,7 @@ class Roadmap:
         while (k < n):
             p = rng.rand(bnds.shape[0])*(bnds[:,1] - bnds[:,0]) + bnds[:,0]
             q = DobotModel.inverse_kinematics(p)
-            if not any(np.isnan(q)) and not Simulation.collision(q):
+            if not any(np.isnan(q)) and not self.sim.collision(q):
                 self.G.add_node(k,cfg=q)
                 ps[k] = p
                 k+=1
@@ -136,7 +162,7 @@ class Roadmap:
         k = 0
         while (k < n):
             q = tuple(rng.rand(bnds.shape[0])*(bnds[:,1] - bnds[:,0]) + bnds[:,0])
-            if DobotModel.valid_angles(q) and not Simulation.collision(q):
+            if DobotModel.valid_angles(q) and not self.sim.collision(q):
                 self.G.add_node(k,cfg=q)
                 ps[k] = DobotModel.forward_kinematics(q)
                 k+=1
