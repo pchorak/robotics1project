@@ -42,7 +42,7 @@ class Simulation:
         """
         arm = DobotModel.get_mesh(angles)
 
-        fig = figure()#plt.gcf()
+        fig = plt.figure()#plt.gcf()
         ax = Axes3D(fig)
         #plt.axis('equal')
         for Ta in arm:
