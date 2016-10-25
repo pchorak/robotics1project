@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# Purpose: Use the keyboard to directly increment and decrement the Dobot's joint angles
+# in order to find the angle limits.
+
 import time
 import curses
 import SerialInterface
@@ -12,14 +15,14 @@ interface.set_playback_config()
 
 screen = curses.initscr()
 curses.cbreak()
-curses.noecho(1)
+curses.noecho()
 screen.keypad(1)
 
 inc = 5.0
 angles = [0.0,0.0,0.0]
 
 time.sleep(2)
-interface.send_absolute_angles(0.0,0.0,0.0,0.0)
+interface.send_absolute_angles(angles[0], angles[1], angles[2], 0.0)
 time.sleep(2)
 #interface.set_initial_angles(angles[1], angles[2])
 

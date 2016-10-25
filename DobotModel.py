@@ -11,7 +11,7 @@ l1 = 135 # length of arm link 1
 l2 = 160 # length of arm link2 2
 d = 50 # length of end effector
 
-limits = np.array([[-135,135],[-5,60],[-1,65]])*np.pi/180.0
+limits = np.array([[-135,135],[0,60],[0,60]])*np.pi/180.0
 
 # Vertices
 #import itertools as it
@@ -47,8 +47,7 @@ def valid_angles(angles):
     if (angles[2] < limits[2,0]) or (limits[2,1] < angles[2]):
         return False
     # Relative joint angle 2
-    a2_rel = angles[2] + np.pi/2 - angles[1]
-    if (a2_rel < 55*np.pi/180.0):
+    if ((angles[2] - angles[1]) < -35*np.pi/180.0):
         return False
     return True
 
@@ -156,11 +155,11 @@ def test():
     check(forward_kinematics((pi4,pi2,0)), np.array([l1+l2+d,l1+l2+d,0])/np.sqrt(2))
 
     # test inverse kinematics
-    check(inverse_kinematics(forward_kinematics((0,0,0))),(0,0,0))
-    check(inverse_kinematics(forward_kinematics((0,pi8,0))),(0,pi8,0))
+    check(inverse_kinematics(forward_kinematics((0,0.01,0.01))),(0,0.01,0.01))
+    check(inverse_kinematics(forward_kinematics((0,pi8,0.01))),(0,pi8,0.01))
     check(inverse_kinematics(forward_kinematics((0,pi4,pi4))),(0,pi4,pi4))
-    check(inverse_kinematics(forward_kinematics((0,0,pi4))),(0,0,pi4))
-    check(inverse_kinematics(forward_kinematics((0,0,pi8))),(0,0,pi8))
+    check(inverse_kinematics(forward_kinematics((0,0.01,pi4))),(0,0.01,pi4))
+    check(inverse_kinematics(forward_kinematics((0,0.01,pi8))),(0,0.01,pi8))
     check(inverse_kinematics(forward_kinematics((pi2,pi4,pi8))),(pi2,pi4,pi8))
     check(inverse_kinematics(forward_kinematics((pi4,pi4,pi8))),(pi4,pi4,pi8))
 
