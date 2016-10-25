@@ -25,7 +25,8 @@ time.sleep(2)
 
 # print "SENDING FIRST COMMAND"
 while interface.is_connected():
-    #screen.refresh()
+    screen.refresh()
+    key = screen.getch()
     if (key==97):
         angles[0] -= inc
     if (key==115):
@@ -40,12 +41,6 @@ while interface.is_connected():
         angles[2] += inc
     if (key==103):
         break
-    key = screen.getch()
-    # curses.KEY_RIGHT
-    # curses.KEY_LEFT
-    # curses.KEY_UP
-    # curses.KEY_DOWN
-    # curses.KEY_EXIT
     interface.send_absolute_angles(angles[0], angles[1], angles[2], 0.0)
     time.sleep(1)
 

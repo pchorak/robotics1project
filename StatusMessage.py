@@ -12,6 +12,9 @@ class StatusMessage():
     isGrab = None
     gripperAngle = None
 
+    def get_angles(self):
+        return self.angles[0:3]
+
     def get_base_angle(self):
         return self.angles[0]
 

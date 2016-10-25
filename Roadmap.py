@@ -24,17 +24,14 @@ class Roadmap:
     """
 
     #G - graph of configurations sampled from Qfree
-    #tree - KD-tree of positions sampled from workspace
-
-    bnds = np.array([[-65,-5,-10],[65,85,95]])*np.pi/180.0
-#   bnds = np.array([[0,-200,0],[300,200,300]])
+    #tree - KD-tree of positions sampled from workspace 
 
     def __init__(self,n):
         self.G = nx.Graph()
 
         # Sample environment
-        ps = self._sample_cs(n,self.bnds)
-#       ps = self._sample_ws(n,self.bnds)
+        ps = self._sample_cs(n,DobotModel.limits)
+#       ps = self._sample_ws(n,np.array([[0,300],[-200,200],[0,300]]))
 
         self.tree = kdt.KDTree(ps)
 
@@ -78,6 +75,7 @@ class Roadmap:
         """
         qs = [self.G.node[k]['cfg'] for k in range(len(self.G.node))]
         ps = np.array([DobotModel.forward_kinematics(q) for q in qs])
+        # ps = [self.tree.data[k] for k in range(len(self.tree.data))]
 
         path = np.array([DobotModel.forward_kinematics(q) for q in path])
 
@@ -124,9 +122,9 @@ class Roadmap:
         ps = np.zeros((n,3))
         k = 0
         while (k < n):
-            p = rng.rand(bnds.shape[1])*(bnds[1] - bnds[0]) + bnds[0]
+            p = rng.rand(bnds.shape[0])*(bnds[:,1] - bnds[:,0]) + bnds[:,0]
             q = DobotModel.inverse_kinematics(p)
-            if not np.isnan(psi) and not Simulation.collision(q):
+            if not any(np.isnan(q)) and not Simulation.collision(q):
                 self.G.add_node(k,cfg=q)
                 ps[k] = p
                 k+=1
@@ -137,8 +135,8 @@ class Roadmap:
         ps = np.zeros((n,3))
         k = 0
         while (k < n):
-            q = tuple(rng.rand(bnds.shape[1])*(bnds[1] - bnds[0]) + bnds[0])
-            if not Simulation.collision(q):
+            q = tuple(rng.rand(bnds.shape[0])*(bnds[:,1] - bnds[:,0]) + bnds[:,0])
+            if DobotModel.valid_angles(q) and not Simulation.collision(q):
                 self.G.add_node(k,cfg=q)
                 ps[k] = DobotModel.forward_kinematics(q)
                 k+=1

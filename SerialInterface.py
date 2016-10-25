@@ -7,7 +7,8 @@ import binascii
 import datetime
 import sys
 
-import StatusMessage
+from StatusMessage import StatusMessage
+# import DobotModel
 
 def f2b(i):
     return struct.pack('<f', i)
@@ -94,8 +95,10 @@ class SerialInterface:
         self._send_absolute_command(True, x, y, z, rot, move_mode)
 
     def send_absolute_angles(self, base, rear, front, rot,  move_mode=MOVE_MODE_LINEAR):
-        # todo: assertions for ranges
+        # if DobotModel.valid_angles(base,rear,front):
         self._send_absolute_command(False, base, rear, front, rot,  move_mode)
+        # else:
+            # print 'invalid angles'
 
     def set_initial_angles(self, rear_arm_angle, front_arm_angle):
         print 'setting angles to', rear_arm_angle, front_arm_angle
@@ -195,7 +198,7 @@ class SerialInterface:
                     # print "Message was not terminated by '5a', but", message[-1], "ignoring message"
                     continue
 
-                msg = StatusMessage.StatusMessage()
+                msg = StatusMessage()
                 msg.parse_ascii(message)
 
                 # mutex?

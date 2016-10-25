@@ -8,7 +8,6 @@ import DobotModel
 
 plt.ion()
 
-
 obstacles = np.array([[[230.0,-10,0],[230,10,0],[240,0,200]], \
     [[230,-10,0],[250,-10,0],[240,0,200]], \
     [[230,10,0],[250,10,0],[240,0,200]], \
@@ -20,7 +19,7 @@ def collision(angles):
     """
     Returns whether the arm model intersects any obstacles in a given configuration (psi,th1,th2).
     """
-    arm = _transform(angles)
+    arm = DobotModel.get_mesh(angles)
 
     # Check for collisions
     for Ta in arm:
@@ -33,7 +32,7 @@ def display(angles):
     """
     Plots wireframe models of the arm and obstacles.
     """
-    arm = _transform(angles)
+    arm = DobotModel.get_mesh(angles)
 
     fig = plt.gcf()#figure(1)
     ax = Axes3D(fig)
