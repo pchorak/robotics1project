@@ -37,7 +37,6 @@ while interface.is_connected():
     dy = 0
     dz = 0
 
-    screen.refresh()
     c = screen.getch()
     if (c == 113): # q
         break
@@ -80,6 +79,12 @@ while interface.is_connected():
     interface.send_absolute_angles(angles[0], angles[1], angles[2], 0.0)
     # print angles
     time.sleep(1)
-    # angles = interface.current_status.get_angles()
+
+    screen.clear()
+    screen.move(0,0)
+    screen.addstr("(%.2f,%.2f,%.2f)" % tuple(angles))
+    screen.move(1,0)
+    screen.addstr("(%.2f,%.2f,%.2f)" % tuple(interface.current_status.get_angles()))
+    screen.refresh()
 
 curses.endwin()
