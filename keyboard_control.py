@@ -7,7 +7,8 @@ import numpy as np
 import SerialInterface
 import DobotModel
 
-interface = SerialInterface.SerialInterface('/dev/tty.usbmodemFD121')
+interface = SerialInterface.SerialInterface('/dev/tty.usbmodemFD121') # Mac
+# interface = SerialInterface.SerialInterface('/dev/ttyACM0') # Linux
 
 print "Opened connection"
 interface.set_speed()
@@ -68,11 +69,11 @@ while interface.is_connected():
     if (dth != 0):
         angles[mode-1] += dth
     elif (dx != 0) or (dy != 0) or (dz != 0):
-        p = DobotModel.forward_kinematics(tuple(np.deg2rad(angles)))
+        p = DobotModel.forward_kinematics(angles)
         p[0] += dx
         p[1] += dy
         p[2] += dz
-        tmp = np.rad2deg(list(DobotModel.inverse_kinematics(p)))
+        tmp = DobotModel.inverse_kinematics(p)
         if not any(np.isnan(tmp)):
             angles = tmp
 
@@ -85,6 +86,10 @@ while interface.is_connected():
     screen.addstr("(%.2f,%.2f,%.2f)" % tuple(angles))
     screen.move(1,0)
     screen.addstr("(%.2f,%.2f,%.2f)" % tuple(interface.current_status.get_angles()))
+    screen.move(2,0)
+    screen.addstr("[%.2f,%.2f,%.2f]" % tuple(DobotModel.forward_kinematics(angles)))
+    screen.move(3,0)
+    screen.addstr("[%.2f,%.2f,%.2f]" % tuple(interface.current_status.position[0:3]))
     screen.refresh()
 
 curses.endwin()

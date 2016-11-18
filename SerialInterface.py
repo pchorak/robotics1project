@@ -95,8 +95,7 @@ class SerialInterface:
         self._send_absolute_command(True, x, y, z, rot, move_mode)
 
     def send_absolute_angles(self, base, rear, front, rot,  move_mode=MOVE_MODE_LINEAR):
-        d2r = 3.141592/180.0
-        if DobotModel.valid_angles((base*d2r,rear*d2r,front*d2r)):
+        if DobotModel.valid_angles((base,rear,front)):
             self._send_absolute_command(False, base, rear, front, rot,  move_mode)
         else:
             print 'invalid angles'
