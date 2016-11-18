@@ -20,17 +20,20 @@ class Roadmap:
     import Simulation
     import Roadmap
     import numpy as np
-    table = np.array([[[-245,-345,-30],[-245, 345,-30],[345,345,-30]], \
+    table = np.array([[[-245,-345,-30],[-245,345,-30],[345,345,-30]], \
         [[-245,-345,-30],[345,-345,-30],[345,345,-30]]])
-    obstacle = np.array([[[230.0,-10,0],[230,10,0],[240,0,200]], \
-        [[230,-10,0],[250,-10,0],[240,0,200]], \
-        [[230,10,0],[250,10,0],[240,0,200]], \
-        [[250,-10,0],[250,10,0],[240,0,200]]])
+    # obstacle = np.array([[[230.0,-10,0],[230,10,0],[240,0,200]], \
+    #     [[230,-10,0],[250,-10,0],[240,0,200]], \
+    #     [[230,10,0],[250,10,0],[240,0,200]], \
+    #     [[250,-10,0],[250,10,0],[240,0,200]]])
+    obstacle = np.array([[[150,-200,-30],[150,200,-30],[150,-200,50]], \
+        [[150,200,-30],[150,200,50],[150,-200,50]]])
     sim = Simulation.Simulation()
     sim.add_obstacles(table)
     sim.add_obstacles(obstacle)
-    prm = Roadmap.Roadmap(sim,50)
-    path = prm.get_path((np.pi/4,np.pi/3,0),(-np.pi/4,np.pi/3,0))
+    prm = Roadmap.Roadmap(sim,150,[[-90,90],[0,60],[0,60]])
+    # path = prm.get_path((45,60,0),(-45,60,0))
+    path = prm.get_path((0,0,60),(0,45,20))
     prm.plot_path(path)
     # prm.display()
     # Simulation.display(path[0])
@@ -41,7 +44,7 @@ class Roadmap:
 
     def __init__(self,sim,n,bounds=DobotModel.limits):
         self.sim = sim
-        self.generate(n)
+        self.generate(n,bounds)
 
     def generate(self,n,bounds=DobotModel.limits):
         """

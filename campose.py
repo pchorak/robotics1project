@@ -47,29 +47,32 @@ def test():
     n = 20 # number of simulated measurements
 
     # Hidden parameters
-    p0a = rng.normal(0,150,[3,1]) # mm
-    ptc = rng.normal(0,50,[3,1]) # mm
-    Rtc = math3D.rot(rng.normal(0,1,3),rng.normal(0,90))
+    p0a = np.array([[215.0],[0],[-50]]) # mm
+    ptc = np.array([[25.0],[10],[-30]]) # mm
+    Rtc = math3D.rot([1.0,0.1,0.2],180) # deg
 
     # Simulate measurements
     angle_list = []
     pca_list = []
     for k in range(n):
-        angles = tuple(rng.normal(0,1,3))
+        angles = (rng.normal(0,45),60*rng.rand(),60*rng.rand())
         # Dobot kinematics
         Rt0 = np.transpose(DobotModel.R0T(angles))
         p0t = np.transpose(np.matrix(DobotModel.forward_kinematics(angles)))
         # calculate camera vector
         pca = np.transpose(Rtc)*(Rt0*(p0a - p0t) - ptc)
-        pca = pca + rng.normal(0,0.001,[3,1]) # add noise
+        pca = pca + rng.normal(0,0.5,[3,1]) # add noise (mm)
         # add to lists
         angle_list.append(angles)
         pca_list.append(pca)
 
     # Estimate transformation
     (p_est,R_est) = get_pose(angle_list,pca_list)
-    print "Percent errors"
-    print "pct:"
-    print (p_est-ptc)/ptc
-    print "Rct:"
-    print (R_est-Rtc)/Rtc
+    print "ptc"
+    print ptc
+    print "ptc (estimate)"
+    print p_est
+    print "Rtc"
+    print Rtc
+    print "Rtc (estimate)"
+    print R_est

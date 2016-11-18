@@ -11,7 +11,7 @@ l1 = 135 # length of arm link 1
 l2 = 160 # length of arm link2 2
 d = 55 # length of end effector
 
-limits = np.array([[-135,135],[0,60],[0,60]])*np.pi/180.0
+limits = np.array([[-135,135],[0,60],[0,60]])
 
 # Vertices
 #import itertools as it
@@ -47,7 +47,7 @@ def valid_angles(angles):
     if (angles[2] < limits[2,0]) or (limits[2,1] < angles[2]):
         return False
     # Relative joint angle 2
-    if ((angles[2] - angles[1]) < -35*np.pi/180.0):
+    if ((angles[2] - angles[1]) < -35):
         return False
     return True
 
@@ -60,11 +60,11 @@ def forward_kinematics(angles):
     Output:
         v - x,y,z coordinate of the end effector (3,)
     """
-    r = l1*np.sin(angles[1]) + l2*np.cos(angles[2]) + d
+    r = l1*math3D.sind(angles[1]) + l2*math3D.cosd(angles[2]) + d
     v = np.zeros(3)
-    v[0] = r*np.cos(angles[0]) # x
-    v[1] = r*np.sin(angles[0]) # y
-    v[2] = l1*np.cos(angles[1]) - l2*np.sin(angles[2]) # z
+    v[0] = r*math3D.cosd(angles[0]) # x
+    v[1] = r*math3D.sind(angles[0]) # y
+    v[2] = l1*math3D.cosd(angles[1]) - l2*math3D.sind(angles[2]) # z
     return v
 
 def R0T(angles):
@@ -92,14 +92,14 @@ def inverse_kinematics(v):
     rho = np.sqrt(rho_sq) # distance b/w the ends of the links joined at the elbow
 
     # law of cosines
-    alpha = np.arccos((l1_sq + rho_sq - l2_sq)/(2.0*l1*rho))
-    beta = np.arctan2(z,r-d)
-    gamma = np.arccos((l1_sq + l2_sq - rho_sq)/(2.0*l1*l2))
+    alpha = math3D.acosd((l1_sq + rho_sq - l2_sq)/(2.0*l1*rho))
+    beta = math3D.atan2d(z,r-d)
+    gamma = math3D.acosd((l1_sq + l2_sq - rho_sq)/(2.0*l1*l2))
 
     # joint angles
-    a0 = np.arctan2(y,x)
-    a1 = np.pi/2 - beta - alpha
-    a2 = np.pi/2 - gamma + a1
+    a0 = math3D.atan2d(y,x)
+    a1 = 90.0 - beta - alpha
+    a2 = 90.0 - gamma + a1
 
     # return nan for the angles if the position is unreachable
     angles = (a0,a1,a2)
@@ -112,12 +112,12 @@ def jacobian(angles):
     Input: (a0,a1,a2)
     Output: Jacobian matrix d(x,y,z)/d(a0,a1,a2)
     """
-    s0 = np.sin(angles[0])
-    c0 = np.cos(angles[0])
-    s1 = np.sin(angles[1])
-    c1 = np.cos(angles[1])
-    s2 = np.sin(angles[2])
-    c2 = np.cos(angles[2])
+    s0 = math3D.sind(angles[0])
+    c0 = math3D.cosd(angles[0])
+    s1 = math3D.sind(angles[1])
+    c1 = math3D.cosd(angles[1])
+    s2 = math3D.sind(angles[2])
+    c2 = math3D.cosd(angles[2])
     r = l1*s1 + l2*c2 + d
     return np.matrix([ \
         [-r*s0, l1*c0*c1, -l2*c0*s2], \
@@ -132,7 +132,7 @@ def get_mesh(angles):
     # Transform the model components into the global reference frame
     R0 = math3D.rotz(angles[0])
     R1 = math3D.roty(angles[1])
-    R2 = math3D.roty(angles[2]+np.pi/2)
+    R2 = math3D.roty(angles[2]+90.0)
     p1 = np.matrix([[0],[0],[l1]])
     p2 = np.matrix([[0],[0],[l2]])
     verts = np.transpose(np.array( \
@@ -146,31 +146,28 @@ def get_mesh(angles):
     return arm
 
 def test():
-    pi2 = np.pi/2
-    pi4 = np.pi/4
-    pi8 = np.pi/8
     s2 = np.sqrt(2)
     check = npt.assert_array_almost_equal
 
     # test forward kinematics
     check(forward_kinematics((0,0,0)),[l2+d,0,l1])
-    check(forward_kinematics((0,pi2,0)),[l1+l2+d,0,0])
-    check(forward_kinematics((0,pi4,-pi4)), np.array([l1+l2,0,l1+l2])/np.sqrt(2) + [d,0,0])
-    check(forward_kinematics((0,0,pi2)),[d,0,l1-l2])
-    check(forward_kinematics((0,0,pi4)), [d+l2/np.sqrt(2),0,l1-l2/np.sqrt(2)])
-    check(forward_kinematics((pi2,pi2,0)),[0,l1+l2+d,0])
-    check(forward_kinematics((pi4,pi2,0)), np.array([l1+l2+d,l1+l2+d,0])/np.sqrt(2))
+    check(forward_kinematics((0,90,0)),[l1+l2+d,0,0])
+    check(forward_kinematics((0,45,-45)), np.array([l1+l2,0,l1+l2])/np.sqrt(2) + [d,0,0])
+    check(forward_kinematics((0,0,90)),[d,0,l1-l2])
+    check(forward_kinematics((0,0,45)), [d+l2/np.sqrt(2),0,l1-l2/np.sqrt(2)])
+    check(forward_kinematics((90,90,0)),[0,l1+l2+d,0])
+    check(forward_kinematics((45,90,0)), np.array([l1+l2+d,l1+l2+d,0])/np.sqrt(2))
 
     # test inverse kinematics
     check(inverse_kinematics(forward_kinematics((0,0.01,0.01))),(0,0.01,0.01))
-    check(inverse_kinematics(forward_kinematics((0,pi8,0.01))),(0,pi8,0.01))
-    check(inverse_kinematics(forward_kinematics((0,pi4,pi4))),(0,pi4,pi4))
-    check(inverse_kinematics(forward_kinematics((0,0.01,pi4))),(0,0.01,pi4))
-    check(inverse_kinematics(forward_kinematics((0,0.01,pi8))),(0,0.01,pi8))
-    check(inverse_kinematics(forward_kinematics((pi2,pi4,pi8))),(pi2,pi4,pi8))
-    check(inverse_kinematics(forward_kinematics((pi4,pi4,pi8))),(pi4,pi4,pi8))
+    check(inverse_kinematics(forward_kinematics((0,22.5,0.01))),(0,22.5,0.01))
+    check(inverse_kinematics(forward_kinematics((0,45,45))),(0,45,45))
+    check(inverse_kinematics(forward_kinematics((0,0.01,45))),(0,0.01,45))
+    check(inverse_kinematics(forward_kinematics((0,0.01,22.5))),(0,0.01,22.5))
+    check(inverse_kinematics(forward_kinematics((90,45,22.5))),(90,45,22.5))
+    check(inverse_kinematics(forward_kinematics((45,45,22.5))),(45,45,22.5))
 
     # test jacobian
     check(jacobian((0,0,0)), np.matrix([[0,l1,0],[l2+d,0,0],[0,0,-l2]]))
-    check(jacobian((pi2,pi2,0)), np.matrix([[-l1-l2-d,0,0],[0,0,0],[0,-l1,-l2]]))
-    check(jacobian((0,pi4,pi4)), np.matrix([[0,l1/s2,-l2/s2],[(l1+l2)/s2+d,0,0],[0,-l1/s2,-l2/s2]]))
+    check(jacobian((90,90,0)), np.matrix([[-l1-l2-d,0,0],[0,0,0],[0,-l1,-l2]]))
+    check(jacobian((0,45,45)), np.matrix([[0,l1/s2,-l2/s2],[(l1+l2)/s2+d,0,0],[0,-l1/s2,-l2/s2]]))
