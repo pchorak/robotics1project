@@ -4,19 +4,20 @@ import time
 import curses
 import numpy as np
 import os.path
+import argparse
 
 import SerialInterface
 import DobotModel
 
 if __name__ == '__main__':
-    ports = ['/dev/tty.usbmodemFD121','/dev/tty.usbmodemFA131','/dev/ttyACM0']
-    interface = None
-    for port in ports:
-        if os.path.exists(port):
-            interface = SerialInterface.SerialInterface(port)
-    if interface is None:
-        print "Serial device not found in known list"
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', '--port', type=None, default='/dev/ttyACM0')
+    args = parser.parse_args()
+    if not os.path.exists(args.port):
+        print "Serial device '%s' not found" % args.port
     else:
+        interface = SerialInterface.SerialInterface(args.port)
+
         # start screen to read keys
         screen = curses.initscr()
         curses.cbreak()
