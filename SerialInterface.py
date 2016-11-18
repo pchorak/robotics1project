@@ -205,8 +205,8 @@ class SerialInterface:
                 # mutex?
                 self.current_status = msg
                 # sys.stdout.flush()
-                if cnt % 10 == 0:
-                    print datetime.datetime.now(), msg.angles
+#               if cnt % 10 == 0:
+#                   print datetime.datetime.now(), msg.angles
                 cnt += 1
                 # print cnt
 

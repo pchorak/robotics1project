@@ -9,7 +9,7 @@ import math3D
 # Arm parameters
 l1 = 135 # length of arm link 1
 l2 = 160 # length of arm link2 2
-d = 50 # length of end effector
+d = 55 # length of end effector
 
 limits = np.array([[-135,135],[0,60],[0,60]])*np.pi/180.0
 
