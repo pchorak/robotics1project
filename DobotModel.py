@@ -67,6 +67,13 @@ def forward_kinematics(angles):
     v[2] = l1*np.cos(angles[1]) - l2*np.sin(angles[2]) # z
     return v
 
+def R0T(angles):
+    """
+    Input: (a0,a1,a2)
+    Output: rotation matrix to transform vectors in the end effector frame to the base frame
+    """
+    return math3D.rotz(angles[0])
+
 def inverse_kinematics(v):
     """
     Input:
