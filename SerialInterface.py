@@ -79,6 +79,13 @@ class SerialInterface:
         self.serial_connection.write(cmd_str)
         # print "sending", binascii.b2a_hex(cmd_str)
 
+    def send_jog_command(self, cartesian, axis, speed):
+        cmd_str_10 = [0]*10
+        cmd_str_10[0] = 7 if cartesian else 2 # linear or joint jog
+        cmd_str_10[1] = axis
+        cmd_str_10[7] = speed # percent of max speed
+        self._send_command(cmd_str_10)
+
     def _send_absolute_command(self, cartesian, p1, p2, p3, p4, move_mode):
         # global cmd_str_10
         cmd_str_10 = [0]*10

@@ -5,46 +5,58 @@
 
 import time
 import curses
+import os.path
+
 import SerialInterface
 
-interface = SerialInterface.SerialInterface('/dev/tty.usbmodemFD121')
+if __name__ == '__main__':
+    ports = ['/dev/tty.usbmodemFD121','/dev/tty.usbmodemFA131','/dev/ttyACM0']
+    interface = None
+    for port in ports:
+        if os.path.exists(port):
+            interface = SerialInterface.SerialInterface(port)
+    if interface is None:
+        print "Serial device not found in known list"
+    else:
+        screen = curses.initscr()
+        curses.cbreak()
+        curses.noecho()
+        #screen.nodelay(1)
+        screen.keypad(1)
 
-print "Opened connection"
-interface.set_speed()
-interface.set_playback_config()
+        speed = 30
 
-screen = curses.initscr()
-curses.cbreak()
-curses.noecho()
-screen.keypad(1)
+        time.sleep(1)
+        interface.send_absolute_angles(0,20,20,0)
+        time.sleep(1)
 
-inc = 5.0
-angles = [0.0,0.0,0.0]
+        while interface.is_connected():
+            screen.clear()
+            screen.move(0,0)
+            screen.addstr("(%.2f,%.2f,%.2f)" % tuple(interface.current_status.get_angles()))
+            screen.refresh()
 
-time.sleep(2)
-interface.send_absolute_angles(angles[0], angles[1], angles[2], 0.0)
-time.sleep(2)
-#interface.set_initial_angles(angles[1], angles[2])
+            c = screen.getch()
+            if (c == 113): # q
+                break
+            elif (c == 61): # =
+                speed = min(100,speed+5)
+            elif (c == 45): # -
+                speed = max(0,speed-5)
+            elif (c == curses.KEY_LEFT):
+                interface.send_jog_command(False,1,speed)
+            elif (c == curses.KEY_UP):
+                interface.send_jog_command(False,3,speed)
+            elif (c == 91): # [
+                interface.send_jog_command(False,5,speed)
+            elif (c == curses.KEY_RIGHT):
+                interface.send_jog_command(False,2,speed)
+            elif (c == curses.KEY_DOWN):
+                interface.send_jog_command(False,4,speed)
+            elif (c == 93): # ]
+                interface.send_jog_command(False,6,speed)
+            else:
+                interface.send_jog_command(False,0,0)
+            time.sleep(0.1)
 
-# print "SENDING FIRST COMMAND"
-while interface.is_connected():
-    screen.refresh()
-    key = screen.getch()
-    if (key==97):
-        angles[0] -= inc
-    if (key==115):
-        angles[1] -= inc
-    if (key==100):
-        angles[2] -= inc
-    if (key==113):
-        angles[0] += inc
-    if (key==119):
-        angles[1] += inc
-    if (key==101):
-        angles[2] += inc
-    if (key==103):
-        break
-    interface.send_absolute_angles(angles[0], angles[1], angles[2], 0.0)
-    time.sleep(1)
-
-curses.endwin()
+        curses.endwin()
