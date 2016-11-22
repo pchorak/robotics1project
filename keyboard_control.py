@@ -6,14 +6,16 @@ import numpy as np
 import os.path
 import argparse
 
-import SerialInterface
 import DobotModel
 import AR_Camera
 
 DUCKY = [16287382, 51]
 
+
+
 def keyboard_control(port):
-        interface = SerialInterface.SerialInterface(port)
+        controller = Controller(port)
+        
         cam = AR_Camera.Camera(1,DUCKY)
         cam.initialize()
 
@@ -21,37 +23,27 @@ def keyboard_control(port):
         screen = curses.initscr()
         curses.cbreak()
         curses.noecho()
-        screen.nodelay(1)
+        screen.nodelay(1) # DIFFERENT #
         screen.keypad(1)
 
         angle_list = []
         pca_list = []
 
-        # state information
-        vid = False
-        th_inc = 2.0 # deg
-        p_inc = 5.0 # mm
-        angles = [0.0,20,20]
-        mode = 1; # +/- controls joint 1, 2, or 3
-
-        time.sleep(1)
-        interface.send_absolute_angles(angles[0], angles[1], angles[2], 0.0)
-        time.sleep(1)
-        #interface.set_initial_angles(angles[1], angles[2])
+        vid = False # video state
 
         while interface.is_connected():
-            dth = 0
-            dx = 0
-            dy = 0
-            dz = 0
-
             c = screen.getch()
             if (c == 113): # q
+                controller.stop()
+                time.sleep(1)
                 break
             elif (c == 99): # c
-                angle_list.append(angles)
+                time.sleep(1)
+                angle_list.append(controller.get_angles())
                 pose,_,_,_ = cam.capture_data()
                 pca_list.append(pose[0])
+            elif (c == 109): # m
+                controller.switch_modes()
             elif (c == 118): # v
                 if not vid:
                     cam.activate_video()
@@ -60,52 +52,36 @@ def keyboard_control(port):
                     cam.deactiveate_video()
                     vid = False
             elif (c == 61): # =
-                dth = th_inc
+                controller.change_effort(5)
             elif (c == 45): # -
-                dth = -th_inc
+                controller.change_effort(-5)
             elif (c == curses.KEY_LEFT):
-                dy = p_inc
-            elif (c == curses.KEY_RIGHT):
-                dy = -p_inc
+                controller.move(1)
             elif (c == curses.KEY_UP):
-                dx = p_inc
-            elif (c == curses.KEY_DOWN):
-                dx = -p_inc
-            elif (c == 93): # ]
-                dz = p_inc
+                controller.move(3)
             elif (c == 91): # [
-                dz = -p_inc
-            elif (c == 49): # 1
-                mode = 1
-            elif (c == 50): # 2
-                mode = 2
-            elif (c == 51): # 3
-                mode = 3
-
-            if (dth != 0):
-                angles[mode-1] += dth
-                interface.send_absolute_angles(angles[0], angles[1], angles[2], 0.0)
-            elif (dx != 0) or (dy != 0) or (dz != 0):
-                p = DobotModel.forward_kinematics(angles)
-                p[0] += dx
-                p[1] += dy
-                p[2] += dz
-                tmp = list(DobotModel.inverse_kinematics(p))
-                if not any(np.isnan(tmp)):
-                    angles = tmp
-                    interface.send_absolute_angles(angles[0], angles[1], angles[2], 0.0)
+                controller.move(5)
+            elif (c == curses.KEY_RIGHT):
+                controller.move(2)
+            elif (c == curses.KEY_DOWN):
+                controller.move(4)
+            elif (c == 93): # ]
+                controller.move(6)
+            elif (c > 0):
+                controller.stop()
 
             time.sleep(0.1)
 
             screen.clear()
             screen.move(0,0)
-            screen.addstr("(%.2f,%.2f,%.2f)" % tuple(angles))
+            screen.addstr("(%.2f,%.2f,%.2f)" % tuple(controller.get_angles()))
             screen.move(1,0)
-            screen.addstr("(%.2f,%.2f,%.2f)" % tuple(interface.current_status.get_angles()))
-            screen.move(2,0)
-            screen.addstr("[%.2f,%.2f,%.2f]" % tuple(DobotModel.forward_kinematics(angles)))
-            screen.move(3,0)
-            screen.addstr("[%.2f,%.2f,%.2f]" % tuple(interface.current_status.position[0:3]))
+            screen.addstr("[%.2f,%.2f,%.2f]" % tuple(controller.get_position()))
+            if (controller.mode == 0):
+                screen.move(2,0)
+                screen.addstr("(%.2f,%.2f,%.2f)" % tuple(controller.angles))
+                screen.move(3,0)
+                screen.addstr("[%.2f,%.2f,%.2f]" % tuple(DobotModel.forward_kinematics(controller.angles)))
             screen.refresh()
 
         curses.endwin()
@@ -120,4 +96,3 @@ if __name__ == '__main__':
         print "Serial device '%s' not found" % args.port
     else:
         keyboard_control(args.port)
-
