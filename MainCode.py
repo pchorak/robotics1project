@@ -55,8 +55,8 @@ def touch(interface, detected_object , mode):
     P0t = DobotModel.forward_kinematics(interface.current_status.get_angles())
     
     # If arial mode and z is low, move up a bit  
-    if mode == 2 and P0t[3] < 0:
-        P0t = P0t + [0,0,10]
+    if mode == 2 and P0t[2] < 0:
+        P0t = P0t + [0,0,50]
         move_xyz(interface, P0t)
 
     # Getting Desired XYZ of end effector
@@ -74,7 +74,7 @@ def touch(interface, detected_object , mode):
     # ARIAL MODE
     elif mode == 2:
         # Move directly above target
-        move_xyz(interface, target + [0,0,10]) 
+        move_xyz(interface, target + np.reshape(np.array([0,0,50]) ,(3, 1)))
         # Move to target
         move_xyz(interface, target)   
 

@@ -68,21 +68,30 @@ class Controller:
         """
         Input: direction - code between 1 and 6 specifying the direction of the movement
             Dir Mode0 Mode1
-            1   +x    +a0
-            2   -x    -a0
-            3   +y    +a1
-            4   -y    -a1
-            5   +z    +a2
-            6   -z    -a2
+            1   +y    +a0
+            2   -y    -a0
+            3   +x    +a1
+            4   -x    -a1
+            5   -z    +a2
+            6   +z    -a2
         """
         if (self.mode == 1):
             self.interface.send_jog_command(False,direction,self.effort)
         else: # (mself.ode == 0):
             speed = self.max_speed*(self.effort/100.0)
-            axis = np.ceil(direction/2)-1
-            sign = pow(-1,direction+1)
             dp = np.zeros(3)
-            dp[axis] = sign*speed
+            if (direction == 1):
+                dp[1] = +speed
+            elif (direction == 2):
+                dp[1] = -speed
+            elif (direction == 3):
+                dp[0] = +speed
+            elif (direction == 4):
+                dp[0] = -speed
+            elif (direction == 5):
+                dp[2] = -speed
+            elif (direction == 6):
+                dp[2] = +speed
 
             # Use kinematics to adjust the x,y,z position
             p = DobotModel.forward_kinematics(self.angles)
