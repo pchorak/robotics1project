@@ -93,7 +93,7 @@ class Camera:
     def start_video(self):
         while self.active_video:
             # Get Data
-            (ducky, duckybot, obstacle, img) = self.capture_data()    
+            img = self.capture_data()[3]
 
             # Show Video
             cv2.imshow('live', img)

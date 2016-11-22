@@ -10,9 +10,8 @@ import DobotModel
 import Controller
 import AR_Camera
 
-DUCKY = [16287382, 51]
-
-
+#DUCKY = [16287382, 51]
+DUCKY = [56356251, 25]
 
 def keyboard_control(port):
         controller = Controller.Controller(port)
@@ -86,7 +85,7 @@ def keyboard_control(port):
             screen.refresh()
 
         curses.endwin()
-        cam.release()
+        #cam.release()
         return (angle_list,pca_list)
 
 if __name__ == '__main__':
