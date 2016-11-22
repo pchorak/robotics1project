@@ -38,7 +38,7 @@ class Camera:
         # Initialize video capture
         self.cap = cv2.VideoCapture(self.ID)
         
-        if cv2.__version__ == "2.4.11":
+        if cv2.__version__[0] == "2":
             # Latest Stable Version
             self.cap.set(cv2.cv.CV_CAP_PROP_FPS, 10.0)
             frameRate = self.cap.get(cv2.cv.CV_CAP_PROP_FPS)
@@ -91,16 +91,9 @@ class Camera:
 
 
     def start_video(self):
-        print "----------------------------"             
         while self.active_video:
             # Get Data
             (ducky, duckybot, obstacle, img) = self.capture_data()    
-
-            # Display Data
-            print "Ducky Pose:", ducky
-            print "Duckybot Pose:", duckybot
-            print "Obstacle Pose:", obstacle
-            print "----------------------------"            
 
             # Show Video
             cv2.imshow('live', img)
@@ -140,7 +133,7 @@ class Camera:
             m.draw_contour(img)
 
             # Label the tag ID on the image
-            if cv2.__version__ == "2.4.11":
+            if cv2.__version__[0] == "2":
                 # Latest Stable Version
                 cv2.putText(img, str(m.id), tuple(int(p) for p in m.center), cv2.cv.CV_FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
             else:

@@ -7,6 +7,7 @@ import os.path
 import argparse
 
 import DobotModel
+import Controller
 import AR_Camera
 
 DUCKY = [16287382, 51]
@@ -14,9 +15,9 @@ DUCKY = [16287382, 51]
 
 
 def keyboard_control(port):
-        controller = Controller(port)
+        controller = Controller.Controller(port)
         
-        cam = AR_Camera.Camera(1,DUCKY)
+        cam = AR_Camera.Camera(0,DUCKY)
         cam.initialize()
 
         # start screen to read keys
@@ -31,7 +32,7 @@ def keyboard_control(port):
 
         vid = False # video state
 
-        while interface.is_connected():
+        while controller.is_connected():
             c = screen.getch()
             if (c == 113): # q
                 controller.stop()
@@ -49,7 +50,7 @@ def keyboard_control(port):
                     cam.activate_video()
                     vid = True
                 else:
-                    cam.deactiveate_video()
+                    cam.deactivate_video()
                     vid = False
             elif (c == 61): # =
                 controller.change_effort(5)

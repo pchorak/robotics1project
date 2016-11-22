@@ -6,16 +6,16 @@ import numpy as np
 import SerialInterface
 import DobotModel
 
-class Controller(port):
+class Controller:
     max_speed = 5
 
     def __init__(self,port):
         """
         Input: port - the serial port connected to the Dobot
         """
-        mode = 0 # absolute (0) or jog (1)
-        effort = 30 # percent effort
-        angles = [0.0,5.0,5.0]
+        self.mode = 0 # absolute (0) or jog (1)
+        self.effort = 30 # percent effort
+        self.angles = [0.0,5.0,5.0]
 
         # Initialize serial interface
         self.interface = SerialInterface.SerialInterface(port)
@@ -44,21 +44,27 @@ class Controller(port):
         Signals the end of a jog command.
         """
         if (self.mode == 1):
-            interface.send_jog_command(False,0,0)
+            self.interface.send_jog_command(False,0,0)
 
     def get_angles(self):
         """
         Output: [a0,a1,a2]
         """
-        return interface.current_status.angles[0:3]
+        return self.interface.current_status.angles[0:3]
 
     def get_position(self):
         """
         Output: [x,y,z]
         """
-        return interface.current_status.position[0:3]
+        return self.interface.current_status.position[0:3]
 
-    def move_arm(self,direction):
+    def is_connected(self):
+        """
+        Output: True if the serial interface is still connected
+        """
+        return self.interface.is_connected()
+
+    def move(self,direction):
         """
         Input: direction - code between 1 and 6 specifying the direction of the movement
             Dir Mode0 Mode1
@@ -70,7 +76,7 @@ class Controller(port):
             6   -z    -a2
         """
         if (self.mode == 1):
-            interface.send_jog_command(False,direction,self.effort)
+            self.interface.send_jog_command(False,direction,self.effort)
         else: # (mself.ode == 0):
             speed = self.max_speed*(self.effort/100.0)
             axis = np.ceil(direction/2)-1
@@ -84,4 +90,4 @@ class Controller(port):
             a_new = DobotModel.inverse_kinematics(p)
             if not any(np.isnan(a_new)):
                 self.angles = a_new
-                interface.send_absolute_angles(self.angles[0], self.angles[1], self.angles[2], 0.0)
+                self.interface.send_absolute_angles(self.angles[0], self.angles[1], self.angles[2], 0.0)
