@@ -29,8 +29,8 @@ def get_pose(angle_list,pca_list):
     x = np.linalg.pinv(A)*b
     ptc = x[0:3]
     Rtc = nearest_rot(np.reshape(x[3:12],[3,3])) # enforce SO(3) properties
-#    p0a = x[12:15]
-    return (ptc,Rtc)
+    p0a = x[12:15]
+    return (ptc,Rtc,p0a)
 
 def nearest_rot(M):
     """
@@ -47,7 +47,7 @@ def test():
     n = 20 # number of simulated measurements
 
     # Hidden parameters
-    p0a = np.array([[215.0],[0],[-50]]) # mm
+    p0a = np.array([[215.0],[0],[-20]]) # mm
     ptc = np.array([[25.0],[10],[-30]]) # mm
     Rtc = math3D.rot([1.0,0.1,0.2],180) # deg
 
@@ -67,12 +67,13 @@ def test():
         pca_list.append(pca)
 
     # Estimate transformation
-    (p_est,R_est) = get_pose(angle_list,pca_list)
+    (ptc_est,Rtc_est,p0a_est) = get_pose(angle_list,pca_list)
+    ptc_est[2] = ptc_est[2] + p0a[2] - p0a_est[2] # could use all elements if confident about p0a
     print "ptc"
     print ptc
     print "ptc (estimate)"
-    print p_est
+    print ptc_est
     print "Rtc"
     print Rtc
     print "Rtc (estimate)"
-    print R_est
+    print Rtc_est
