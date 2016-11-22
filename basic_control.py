@@ -1,14 +1,92 @@
 #!/usr/bin/env python
 
-# Purpose: Use the keyboard to directly increment and decrement the Dobot's joint angles
-# in order to find the angle limits.
-
 import time
 import curses
+import numpy as np
 import os.path
 import argparse
 
-import SerialInterface
+import DobotModel
+import AR_Camera
+
+DUCKY = [16287382, 51]
+
+
+
+def basic_control(port):
+        controller = Controller(port)
+        
+        cam = AR_Camera.Camera(1,DUCKY)
+        cam.initialize()
+
+        # start screen to read keys
+        screen = curses.initscr()
+        curses.cbreak()
+        curses.noecho()
+        screen.nodelay(1) # DIFFERENT #
+        screen.keypad(1)
+
+        angle_list = []
+        pca_list = []
+
+        vid = False # video state
+
+        while interface.is_connected():
+            c = screen.getch()
+            if (c == 113): # q
+                controller.stop()
+                time.sleep(1)
+                break
+            elif (c == 99): # c
+                time.sleep(1)
+                angle_list.append(controller.get_angles())
+                pose,_,_,_ = cam.capture_data()
+                pca_list.append(pose[0])
+            elif (c == 109): # m
+                controller.switch_modes()
+            elif (c == 118): # v
+                if not vid:
+                    cam.activate_video()
+                    vid = True
+                else:
+                    cam.deactiveate_video()
+                    vid = False
+            elif (c == 61): # =
+                controller.change_effort(5)
+            elif (c == 45): # -
+                controller.change_effort(-5)
+            elif (c == curses.KEY_LEFT):
+                controller.move(1)
+            elif (c == curses.KEY_UP):
+                controller.move(3)
+            elif (c == 91): # [
+                controller.move(5)
+            elif (c == curses.KEY_RIGHT):
+                controller.move(2)
+            elif (c == curses.KEY_DOWN):
+                controller.move(4)
+            elif (c == 93): # ]
+                controller.move(6)
+            elif (c > 0):
+                controller.stop()
+
+            time.sleep(0.1)
+
+            screen.clear()
+            screen.move(0,0)
+            screen.addstr("(%.2f,%.2f,%.2f)" % tuple(controller.get_angles()))
+            screen.move(1,0)
+            screen.addstr("[%.2f,%.2f,%.2f]" % tuple(controller.get_position()))
+            if (controller.mode == 0):
+                screen.move(2,0)
+                screen.addstr("(%.2f,%.2f,%.2f)" % tuple(controller.angles))
+                screen.move(3,0)
+                screen.addstr("[%.2f,%.2f,%.2f]" % tuple(DobotModel.forward_kinematics(controller.angles)))
+            screen.refresh()
+
+        curses.endwin()
+        cam.release()
+        return (angle_list,pca_list)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -17,49 +95,4 @@ if __name__ == '__main__':
     if not os.path.exists(args.port):
         print "Serial device '%s' not found" % args.port
     else:
-        interface = SerialInterface.SerialInterface(args.port)
-
-        screen = curses.initscr()
-        curses.cbreak()
-        curses.noecho()
-        #screen.nodelay(1)
-        screen.keypad(1)
-
-        speed = 30
-
-        time.sleep(1)
-        interface.send_absolute_angles(0,20,20,0)
-        time.sleep(1)
-
-        while interface.is_connected():
-            screen.clear()
-            screen.move(0,0)
-            screen.addstr("(%.2f,%.2f,%.2f)" % tuple(interface.current_status.get_angles()))
-            screen.refresh()
-
-            c = screen.getch()
-            if (c == 113): # q
-                interface.send_jog_command(False,0,0)
-                time.sleep(1)
-                break
-            elif (c == 61): # =
-                speed = min(100,speed+5)
-            elif (c == 45): # -
-                speed = max(0,speed-5)
-            elif (c == curses.KEY_LEFT):
-                interface.send_jog_command(False,1,speed)
-            elif (c == curses.KEY_UP):
-                interface.send_jog_command(False,3,speed)
-            elif (c == 91): # [
-                interface.send_jog_command(False,5,speed)
-            elif (c == curses.KEY_RIGHT):
-                interface.send_jog_command(False,2,speed)
-            elif (c == curses.KEY_DOWN):
-                interface.send_jog_command(False,4,speed)
-            elif (c == 93): # ]
-                interface.send_jog_command(False,6,speed)
-            else:
-                interface.send_jog_command(False,0,0)
-            time.sleep(0.1)
-
-        curses.endwin()
+        basic_control(args.port)

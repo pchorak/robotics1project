@@ -8,15 +8,14 @@ import argparse
 
 import SerialInterface
 import DobotModel
+import AR_Camera
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-p', '--port', type=None, default='/dev/ttyACM0')
-    args = parser.parse_args()
-    if not os.path.exists(args.port):
-        print "Serial device '%s' not found" % args.port
-    else:
-        interface = SerialInterface.SerialInterface(args.port)
+DUCKY = [16287382, 51]
+
+def keyboard_control(port):
+        interface = SerialInterface.SerialInterface(port)
+        cam = AR_Camera.Camera(1,DUCKY)
+        cam.initialize()
 
         # start screen to read keys
         screen = curses.initscr()
@@ -25,7 +24,11 @@ if __name__ == '__main__':
         screen.nodelay(1)
         screen.keypad(1)
 
+        angle_list = []
+        pca_list = []
+
         # state information
+        vid = False
         th_inc = 2.0 # deg
         p_inc = 5.0 # mm
         angles = [0.0,20,20]
@@ -45,6 +48,17 @@ if __name__ == '__main__':
             c = screen.getch()
             if (c == 113): # q
                 break
+            elif (c == 99): # c
+                angle_list.append(angles)
+                pose,_,_,_ = cam.capture_data()
+                pca_list.append(pose[0])
+            elif (c == 118): # v
+                if not vid:
+                    cam.activate_video()
+                    vid = True
+                else:
+                    cam.deactiveate_video()
+                    vid = False
             elif (c == 61): # =
                 dth = th_inc
             elif (c == 45): # -
@@ -95,3 +109,15 @@ if __name__ == '__main__':
             screen.refresh()
 
         curses.endwin()
+        cam.release()
+        return (angle_list,pca_list)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', '--port', type=None, default='/dev/ttyACM0')
+    args = parser.parse_args()
+    if not os.path.exists(args.port):
+        print "Serial device '%s' not found" % args.port
+    else:
+        keyboard_control(args.port)
+
