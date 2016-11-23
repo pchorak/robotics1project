@@ -82,6 +82,8 @@ def touch(interface, detected_object , mode):
 
 # Track an AR Tag. DUCKY = 0  DUCKYBOT = 1   OBSTACLE = 2
 def track(interface, camera, tag_index):    
+    alpha = 0.2 # weight of new measurements
+    P0a_est = None # estimate of AR tag position
     
     while True:
         # Only enter search if capture_data failed to find tag for 10 consecutive frames
@@ -95,32 +97,43 @@ def track(interface, camera, tag_index):
         
         if searching:
             # Search until you find the desired tag
+            P0a_est = False # reset position estimate of AR tag
             data = search(interface, camera, tag_index)   
         
         # Follow tag while it is in view
         while data != [None, None]:
-                # Getting Desired XYZ of end effector
-                Pct = np.array([[0], [0], [130]])
-                Roc = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])
-                Pta = np.matmul(Roc, data[0]) - np.matmul(Roc, Pct)
-                
-                # If the change in desired XYZ is small, don't move
-                if np.linalg.norm(Pta) < 10:
-                    # Get data
-                    data = camera.capture_data()[tag_index]                   
-                    continue
-    
-                p0t = DobotModel.forward_kinematics(interface.current_status.get_angles())
-    
-                target = np.reshape(Pta, (3, 1)) + np.reshape(p0t, (3, 1))
-                # Move end effector to ducky
-                angles = move_xyz(interface,target)
-                time.sleep(0.5)
-                
-                # Get data
-                data = camera.capture_data()[tag_index] 
-    
+            # From calibration
+            Ptc = np.array([[21.58], [10.48], [28.42]])
+            Rtc = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])
 
+            # From camera
+            Pca = data[0]
+
+            # From kinematics
+            angles = interface.current_status.angles[0:3]
+            P0t = np.reshape(DobotModel.forward_kinematics(angles), (3,1))
+            R0t = DobotModel.R0T(angles)
+
+            # Desired
+            Pca_des = np.array([[0], [0], [130]])
+            Poa_des = P0t + np.matmul(R0t, Ptc + np.matmul(Rtc, Pca_des))
+
+            # Smoothed estimate
+            if P0a_est is None:
+                P0a_est = P0a_des # initialize so no movement required
+            P0a =  P0t + np.matmul(R0t, Ptc + np.matmul(Rtc, Pca)) # measured
+            P0a_est = alpha*P0a + (1 - alpha)*P0a_est # update estimate with new measurement
+
+            # If correction is notable, act on it
+            correction = R0a_des - P0a_est
+            if np.linalg.norm(correction) > 5:
+                move_xyz(interface, P0t + correction)
+                time.sleep(0.5)
+            else:
+                time.sleep(0.1) # 10Hz camera
+
+            # Get next measurement
+            data = camera.capture_data()[tag_index]
 
 # Search for AR Tag. DUCKY = 0  DUCKYBOT = 1   OBSTACLE = 2
 # If tag_index is left undefined , it will search until any registered tag is found
