@@ -7,9 +7,9 @@ import DobotModel
 import SerialInterface
 
 #=====DEFINED CONSTANTS=====
-CAMERA_ID = 0
+CAMERA_ID = 1
 VIDEO_MODE = True
-DUCKY = [10000000, 25]
+DUCKY = [16273625, 25]
 DUCKYBOT = [56356251, 25]
 OBSTACLE = [425234, 51]
 REGISTERED_TAGS = [DUCKY, DUCKYBOT, OBSTACLE]
@@ -124,13 +124,13 @@ def track(interface, camera, tag_index):
                 # From camera
                 Pca = np.reshape(data[0], (3,1))
                 # Hover above it (Z offest 5 * marker size)
-                Pca_des = np.array([[0], [0], [7 * REGISTERED_TAGS[tag_index][1]]])
-                correction = np.matmul(R0c, Pca_des - Pca)
+                Pca_des = np.array([[0], [0], [5 * REGISTERED_TAGS[tag_index][1]]])
+                correction = -1*np.matmul(R0c, Pca_des - Pca)
 
                 # If the change in desired XYZ is notable, move to track it
-                if np.linalg.norm(correction) > 5:
+                if np.linalg.norm(correction) > 2.5:
                     angles = move_xyz(interface, P0t + correction)
-                    time.sleep(2)
+                    time.sleep(0.5)
                 
                 # Get data
                 data = camera.get_all_poses()[tag_index] 
