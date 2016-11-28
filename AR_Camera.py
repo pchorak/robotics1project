@@ -185,16 +185,16 @@ class Camera(threading.Thread):
         objPoints = np.zeros((4, 3), dtype=np.float64)
         objPoints[0,0] = -1.0*tag[1]/2.0
         objPoints[0,1] = tag[1]/2.0
-        objPoints[0,2] = 5.0
+        objPoints[0,2] = 0.0
         objPoints[1,0] = tag[1]/2.0
         objPoints[1,1] = tag[1]/2.0
-        objPoints[1,2] = 5.0
+        objPoints[1,2] = 0.0
         objPoints[2,0] = tag[1]/2.0
         objPoints[2,1] = -1*tag[1]/2.0
-        objPoints[2,2] = 5.0
+        objPoints[2,2] = 0.0
         objPoints[3,0] = -1*tag[1]/2.0
         objPoints[3,1] = -1*tag[1]/2.0
-        objPoints[3,2] = 5.0
+        objPoints[3,2] = 0.0
 
         # Get each corner of the tags
         imgPoints = np.zeros((4, 2), dtype=np.float64)        
