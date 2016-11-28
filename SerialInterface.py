@@ -19,6 +19,7 @@ class SerialInterface:
     serial_connection = None
     read_buffer = deque()
     current_status = None
+    prev = [0,0,0,0,0]
 
     MOVE_MODE_JUMP = 0    # raise, move, then lower arm
     MOVE_MODE_JOINTS = 1  # joints move independently
@@ -86,7 +87,7 @@ class SerialInterface:
         cmd_str_10[7] = speed # percent of max speed
         self._send_command(cmd_str_10)
 
-    def _send_absolute_command(self, cartesian, p1, p2, p3, p4, move_mode):
+    def _send_absolute_command(self, cartesian, p1, p2, p3, p4, move_mode, isGrab):
         # global cmd_str_10
         cmd_str_10 = [0]*10
         cmd_str_10[0] = 3 if cartesian else 6  # position or angles
@@ -94,18 +95,29 @@ class SerialInterface:
         cmd_str_10[3] = p2
         cmd_str_10[4] = p3
         cmd_str_10[5] = p4
+        cmd_str_10[6] = isGrab
         cmd_str_10[7] = move_mode
         self._send_command(cmd_str_10)
 
-    def send_absolute_position(self, x, y, z, rot, move_mode=MOVE_MODE_LINEAR):
+    def send_absolute_position(self, x, y, z, rot, move_mode=MOVE_MODE_LINEAR, isGrab=False):
         print "sending position %f %f %f" % (x, y, z)
-        self._send_absolute_command(True, x, y, z, rot, move_mode)
+        self._send_absolute_command(True, x, y, z, rot, move_mode, isGrab)
 
-    def send_absolute_angles(self, base, rear, front, rot,  move_mode=MOVE_MODE_JOINTS):
+    def send_absolute_angles(self, base, rear, front, rot,  move_mode=MOVE_MODE_JOINTS, isGrab=0):
         if DobotModel.valid_angles((base,rear,front)):
-            self._send_absolute_command(False, base, rear, front, rot,  move_mode)
+            if not self.prev[0:3] == [base, rear, front]:
+                self._send_absolute_command(False, base, rear, front, rot,  move_mode, isGrab)
+            elif not self.prev[4] == isGrab:
+                print 'no change in angles (%d, %d, %d)' % (base, rear, front)
+                if isGrab:
+                    self.send_jog_command(False, 9, 0)
+                else:
+                    self.send_jog_command(False,10, 0)
+            else:
+                print 'no changes'
+            self.prev = [base, rear, front, rot, isGrab]
         else:
-            print 'invalid angles'
+            print 'invalid angles (%d, %d, %d)' % (base, rear, front)
 
     def set_initial_angles(self, rear_arm_angle, front_arm_angle):
         print 'setting angles to', rear_arm_angle, front_arm_angle
