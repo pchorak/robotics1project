@@ -45,9 +45,10 @@ def move_xyz(interface, target):
 
 # Touch the end effector to a detected object
 def touch(interface, tag_index, mode):
+    angles = interface.current_status.angles[0:3]
     
     # Get current XYZ
-    P0t = DobotModel.forward_kinematics(interface.current_status.get_angles())
+    P0t = DobotModel.forward_kinematics(angles)
     
     
     # Renew data
@@ -61,8 +62,10 @@ def touch(interface, tag_index, mode):
 
     # Getting Desired XYZ of end effector
     Pct = np.array(CAMERA_OFFSET)
-    Roc = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])
-    Pta = np.matmul(Roc, data[0]) - np.matmul(Roc, Pct)
+    R0t = DobotModel.R0T(angles)
+    Rtc = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])
+    R0c = np.matmul(R0t, Rtc)
+    Pta = np.matmul(R0c, data[0]) - np.matmul(R0c, Pct)
     
     target = np.reshape(Pta, (3, 1)) + np.reshape(P0t, (3, 1))
     
@@ -109,28 +112,28 @@ def track(interface, camera, tag_index):
         
         # Follow tag while it is in view
         while data != [None, None] and not req_exit:
-                # Getting Desired XYZ of end effector
+                # From kinematics
+                angles = interface.current_status.angles[0:3]
+                P0t = np.reshape(DobotModel.forward_kinematics(angles), (3,1))
+                R0t = DobotModel.R0T(angles)
+
+                # From calibration
+                Rtc = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])
+                R0c = np.matmul(R0t,Rtc)
+
+                # From camera
+                Pca = np.reshape(data[0], (3,1))
                 # Hover above it (Z offest 5 * marker size)
-                Pct = np.array([[0], [0], [7 * REGISTERED_TAGS[tag_index][1]]])
-                Roc = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])
-                Pta = np.matmul(Roc, data[0]) - np.matmul(Roc, Pct)
-                
-                # If the change in desired XYZ is small, don't move
-                if np.linalg.norm(Pta) < 5:
-                    # Get data
-                    data = camera.get_all_poses()[tag_index]                   
-                    continue
-    
-                p0t = DobotModel.forward_kinematics(interface.current_status.get_angles())
-    
-                target = np.reshape(Pta, (3, 1)) + np.reshape(p0t, (3, 1))
-                # Move end effector to ducky
-                angles = move_xyz(interface,target)
-                time.sleep(2)
+                Pca_des = np.array([[0], [0], [7 * REGISTERED_TAGS[tag_index][1]]])
+                correction = np.matmul(R0c, Pca_des - Pca)
+
+                # If the change in desired XYZ is notable, move to track it
+                if np.linalg.norm(correction) > 5:
+                    angles = move_xyz(interface, P0t + correction)
+                    time.sleep(2)
                 
                 # Get data
                 data = camera.get_all_poses()[tag_index] 
-    
 
 
 # Search for AR Tag. DUCKY = 0  DUCKYBOT = 1   OBSTACLE = 2
