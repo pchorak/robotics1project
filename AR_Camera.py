@@ -9,10 +9,10 @@ import warnings
 class Camera(threading.Thread):
     def __init__(self, camera_id = 0, video_mode = False, ducky = [None, None] ,duckybot = [None, None], obstacle = [None, None]):
         warnings.simplefilter("ignore")
-        
+
         threading.Thread.__init__(self)
-        self.thread_id = 1        
-        
+        self.thread_id = 1
+
         self.ID = camera_id
         self.ducky_tag = ducky
         self.duckybot_tag = duckybot
@@ -24,34 +24,34 @@ class Camera(threading.Thread):
         self.camMatrix[0][2] = 325.39548
         self.camMatrix[1][1] = 810.75645
         self.camMatrix[1][2] = 249.01798
-        self.camMatrix[2][2] = 1.0    
-        
+        self.camMatrix[2][2] = 1.0
+
         self.distCoeff = np.zeros((1, 5), dtype=np.float64)
         self.distCoeff[0][0] = 0.01584
         self.distCoeff[0][1] = 0.37926
         self.distCoeff[0][2] = -0.00056
         self.distCoeff[0][3] = 0.00331
-        self.distCoeff[0][4] = 0.0        
-        
+        self.distCoeff[0][4] = 0.0
+
         # Initial Capture Data Values
         self.img = None
-        self.Ducky_Pose = [None, None] 
-        self.Duckybot_Pose = [None, None]   
-        self.Obstacle_Pose = [None, None] 
-        
+        self.Ducky_Pose = [None, None]
+        self.Duckybot_Pose = [None, None]
+        self.Obstacle_Pose = [None, None]
+
         self.play_video = video_mode
-        
+
         self.initialize()
-        
-        
+
+
     def initialize(self):
         # Initialize video capture
         self.cap = cv2.VideoCapture(self.ID)
-        
+
         frameRate = 10.0
         frameWidth = 640
-        frameHeight = 480     
-        
+        frameHeight = 480
+
         if cv2.__version__[0] == "2":
             # Latest Stable Version
             self.cap.set(cv2.cv.CV_CAP_PROP_FPS, frameRate)
@@ -61,19 +61,19 @@ class Camera(threading.Thread):
             # version 3.1.0 (Dylans Version)
             self.cap.set(cv2.CAP_PROP_FPS, frameRate)
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, frameWidth)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, frameHeight)            
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, frameHeight)
 
-        self.thresh = 0.4        
+        self.thresh = 0.4
         self.thresh_img = np.zeros((frameHeight, frameWidth, 3), dtype=np.uint8)
-        
+
     def release(self):
         # get rid of video stream window
         if self.play_video:
             cv2.destroyAllWindows()
             for i in range (1,5):
                 time.sleep(.1)
-                cv2.waitKey(1)            
-        
+                cv2.waitKey(1)
+
         # Release video capture
         self.cap.release()
 
@@ -87,12 +87,12 @@ class Camera(threading.Thread):
         if self.ducky_tag != [None, None]:
             output += "\nDucky:    \t ID: {:10} \t Size: {:3}mm".format(self.ducky_tag[0], self.ducky_tag[1])
         if self.duckybot_tag != [None, None]:
-            output += "\nDuckybot: \t ID: {:10} \t Size: {:3}mm".format(self.duckybot_tag[0], self.duckybot_tag[1])        
+            output += "\nDuckybot: \t ID: {:10} \t Size: {:3}mm".format(self.duckybot_tag[0], self.duckybot_tag[1])
         if self.obstacle_tag != [None, None]:
             output += "\nObstacle: \t ID: {:10} \t Size: {:3}mm".format(self.obstacle_tag[0], self.obstacle_tag[1])
         output += "\n========================================\n"
         return output
-            
+
 
 
     def run(self):
@@ -104,20 +104,20 @@ class Camera(threading.Thread):
             if self.play_video:
                 if self.img is not None:
                     cv2.imshow('live', self.img)
-                    cv2.imshow('processed', self.thresh_img)
+                    #cv2.imshow('processed', self.thresh_img)
                     if cv2.waitKey(1) & 0xFF == ord('p'):
                         cv2.imwrite('out.jpg', self.img)
-        
-        
-    def capture_data(self):  
-        
+
+
+    def capture_data(self):
+
         # Get Frame
         okay, self.img = self.cap.read()
         if self.img is None:
             # Bad Image, do nothing
             return
 
-        
+
         # convert image to grayscale then back so it still has
         # 3 color dimensions
         gray_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
@@ -129,7 +129,7 @@ class Camera(threading.Thread):
 
         # blur the rounded image
         blurred_image = cv2.GaussianBlur(self.thresh_img,(5,5),0)
-        
+
         # find any valid AR tags in the image
         markers = detect_markers(self.thresh_img)
 
@@ -137,7 +137,7 @@ class Camera(threading.Thread):
         ducky_unavailable = True
         duckybot_unavailable = True
         obstacle_unavailable = True
-        
+
         # for each valid tag, get the pose
         for m in markers:
             # Draw the marker outline on the image
@@ -149,7 +149,7 @@ class Camera(threading.Thread):
                 cv2.putText(self.img, str(m.id), tuple(int(p) for p in m.center), cv2.cv.CV_FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
             else:
                 # version 3.1.0 (Dylans Version)
-                cv2.putText(self.img, str(m.id), tuple(int(p) for p in m.center), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)            
+                cv2.putText(self.img, str(m.id), tuple(int(p) for p in m.center), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
 
             # Get ducky pose if ducky AR tag was detected
             if (m.id == self.ducky_tag[0]):
@@ -160,25 +160,25 @@ class Camera(threading.Thread):
             elif (m.id == self.duckybot_tag[0]):
                 self.Duckybot_Pose = self.get_object_pose(m, self.duckybot_tag)
                 duckybot_unavailable = False
-                
+
             # Get obstacle pose if obstacle AR tag was detected
             elif (m.id == self.obstacle_tag[0]):
                 self.Obstacle_Pose = self.get_object_pose(m, self.obstacle_tag)
                 obstacle_unavailable = False
-                          
-                                    
+
+
         # set poses for objects not found
         if ducky_unavailable:
-            self.Ducky_Pose = [None, None] 
-        if duckybot_unavailable:    
-            self.Duckybot_Pose = [None, None]   
-        if obstacle_unavailable:        
-            self.Obstacle_Pose = [None, None]  
-            
+            self.Ducky_Pose = [None, None]
+        if duckybot_unavailable:
+            self.Duckybot_Pose = [None, None]
+        if obstacle_unavailable:
+            self.Obstacle_Pose = [None, None]
+
         # Finished capturing available data, return
         return
 
-    
+
     # Given a matching marker and tag, get the pose
     def get_object_pose(self, marker, tag):
         # AR Tag Dimensions
@@ -197,21 +197,20 @@ class Camera(threading.Thread):
         objPoints[3,2] = 0.0
 
         # Get each corner of the tags
-        imgPoints = np.zeros((4, 2), dtype=np.float64)        
+        imgPoints = np.zeros((4, 2), dtype=np.float64)
         for i in range(4):
             imgPoints[i, :] = marker.contours[i, 0, :]
 
 
         camPos = np.zeros((3, 1))
-        camRot = np.zeros((3, 1))             
-        
+        camRot = np.zeros((3, 1))
+
         # SolvePnP
         retVal, rvec, tvec = cv2.solvePnP(objPoints, imgPoints, self.camMatrix, self.distCoeff)
         Roa, b = cv2.Rodrigues(rvec)
         Pca = tvec
-        
-        return [Pca, Roa]        
-    
+
+        return [Pca, Roa]
+
     def get_all_poses(self):
         return (self.Ducky_Pose, self.Duckybot_Pose, self.Obstacle_Pose)
-    
