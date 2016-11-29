@@ -14,6 +14,7 @@ DUCKYBOT = [56356251, 25]
 OBSTACLE = [425234, 51]
 REGISTERED_TAGS = [DUCKY, DUCKYBOT, OBSTACLE]
 CAMERA_OFFSET = [[-9.059], [-24.953], [30.019]]
+DUCKY_POS = np.reshape(np.array([149.66,-229.5,5.04]) ,(3, 1))
 
 # Display poses of all objects
 # [ [Vector tag to camera] ,  [Rotation of tag] ]
@@ -34,17 +35,16 @@ def get_angles(coordinates):
 
 
 # Move Dobot to a desired XYZ position
-def move_xyz(interface, target):
+def move_xyz(interface, target, pump_on = False):
     angles = get_angles(target)
     if any(np.isnan(angles)):
         print "Error: No solution for coordinates: ", target
     else:
-        interface.send_absolute_angles(angles[0],angles[1],angles[2],0.0)
-
+        interface.send_absolute_angles(angles[0],angles[1],angles[2],0.0, interface.MOVE_MODE_LINEAR, pump_on)
 
 
 # Touch the end effector to a detected object
-def touch(interface, tag_index, mode):
+def touch(interface, tag_index, mode, pump_on = False):
     angles = interface.current_status.angles[0:3]
 
     # Get current XYZ
@@ -58,7 +58,7 @@ def touch(interface, tag_index, mode):
     # NO LONGER NEEDED
     if mode == 2 and P0t[2] < 0:
         P0t = P0t + [0,0,50]
-        move_xyz(interface, P0t)
+        move_xyz(interface, P0t, pump_on)
 
     # Getting Desired XYZ of end effector
     Pct = np.array(CAMERA_OFFSET)
@@ -72,14 +72,14 @@ def touch(interface, tag_index, mode):
     # DIRECT MODE
     if mode == 1:
         # Move directly to target
-        move_xyz(interface, target)
+        move_xyz(interface, target, pump_on)
 
     # ARIAL MODE
     elif mode == 2:
         # Move directly above target
         move_xyz(interface, target + np.reshape(np.array([0,0,50]) ,(3, 1)))
         # Move to target
-        move_xyz(interface, target)
+        move_xyz(interface, target, pump_on)
 
 
 
@@ -226,6 +226,10 @@ if __name__ == '__main__':
     interface.send_absolute_angles(0,10,10,0)
     time.sleep(1)
 
+    # SET INITIAL XYZ:
+    initial_xyz = DobotModel.forward_kinematics([0,10,10,0])
+
+
     # INITIALIZING CAMERA
     sys.stdout.write("Initiliazing the Camera..." )
 
@@ -249,6 +253,7 @@ if __name__ == '__main__':
     get data
     touch
     track
+    grab ducky
     arm calibration
     quit
     '''
@@ -284,6 +289,17 @@ if __name__ == '__main__':
 
         elif command == "get data":
             get_data(camera)
+
+        elif command == "grab ducky":
+
+            target = DUCKY_POS + np.array([[0], [0], [30]])
+            move_xyz(interface, target, True)
+            time.sleep(1)
+
+            move_xyz(interface, DUCKY_POS, True)
+
+            time.sleep(3)
+            interface.send_absolute_angles(0,10,10,0, interface.MOVE_MODE_LINEAR, True)
         elif command == "touch":
             # Which object to touch?
             print object_selection
@@ -304,6 +320,7 @@ if __name__ == '__main__':
             track(interface, camera, selection - 1)
 
         elif command == "quit":
+            interface.send_absolute_angles(0,10,10,0)
             sys.stdout.write("Releasing camera...")
             camera.release()
             print "OK!"
