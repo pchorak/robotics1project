@@ -40,7 +40,7 @@ def move_xyz(interface, target, pump_on = False):
     if any(np.isnan(angles)):
         print "Error: No solution for coordinates: ", target
     else:
-        interface.send_absolute_angles(angles[0],angles[1],angles[2],0.0, interface.MOVE_MODE_LINEAR, pump_on)
+        interface.send_absolute_angles(angles[0],angles[1],angles[2],0.0, interface.MOVE_MODE_JOINTS, pump_on)
 
 
 # Touch the end effector to a detected object
@@ -298,8 +298,8 @@ if __name__ == '__main__':
 
             move_xyz(interface, DUCKY_POS, True)
 
-            time.sleep(3)
-            interface.send_absolute_angles(0,10,10,0, interface.MOVE_MODE_LINEAR, True)
+            time.sleep(1)
+            interface.send_absolute_angles(0,10,10,0, interface.MOVE_MODE_JOINTS, True)
         elif command == "touch":
             # Which object to touch?
             print object_selection
