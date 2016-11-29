@@ -276,6 +276,7 @@ if __name__ == '__main__':
     track
     grab ducky
     place ducky
+    search and place
     arm calibration
     quit
     '''
@@ -341,7 +342,7 @@ if __name__ == '__main__':
                 time.sleep(2)
 
                 move_xyz(interface, ducky_xyz, True)
-                
+
                 time.sleep(1)
 
                 move_xyz(interface, goal_xyz, True)
@@ -370,6 +371,37 @@ if __name__ == '__main__':
             selection = int(input("Which object to track: "))
             # Begin Tracking
             track(interface, camera, selection - 1)
+
+        elif command == "search and place":
+            # Which object to search for?
+            print object_selection
+            selection = int(input("Which object to search for: "))
+            # search until tag is found
+            search(interface, camera, selection - 1)
+            # Get data
+            data = camera.get_all_poses()[selection - 1]
+            if data != [None,None]:
+                goal_xyz = get_xyz(interface, selection - 1) + np.array([[0], [0], [45]])
+
+                ducky_xyz = DUCKY_POS + np.array([[0], [0], [30]])
+                move_xyz(interface, ducky_xyz, True)
+                time.sleep(1)
+
+                move_xyz(interface, DUCKY_POS, True)
+
+                time.sleep(2)
+
+                move_xyz(interface, ducky_xyz, True)
+
+                time.sleep(1)
+
+                move_xyz(interface, goal_xyz, True)
+
+                time.sleep(2)
+
+                move_xyz(interface, goal_xyz, False)
+
+
 
         elif command == "quit":
             interface.send_absolute_angles(0,10,10,0)
