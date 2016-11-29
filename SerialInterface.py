@@ -103,7 +103,7 @@ class SerialInterface:
         print "sending position %f %f %f" % (x, y, z)
         self._send_absolute_command(True, x, y, z, rot, move_mode, isGrab)
 
-    def send_absolute_angles(self, base, rear, front, rot,  move_mode=MOVE_MODE_JOINTS, isGrab=0):
+    def send_absolute_angles(self, base, rear, front, rot,  move_mode=MOVE_MODE_JOINTS, isGrab=False):
         if DobotModel.valid_angles((base,rear,front)):
             if not self.prev[0:3] == [base, rear, front]:
                 self._send_absolute_command(False, base, rear, front, rot,  move_mode, isGrab)
@@ -227,4 +227,3 @@ class SerialInterface:
 #                   print datetime.datetime.now(), msg.angles
                 cnt += 1
                 # print cnt
-
