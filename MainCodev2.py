@@ -14,7 +14,8 @@ DUCKYBOT = [56356251, 25]
 OBSTACLE = [425234, 51]
 REGISTERED_TAGS = [DUCKY, DUCKYBOT, OBSTACLE]
 CAMERA_OFFSET = [[-9.059], [-24.953], [30.019]]
-DUCKY_POS = np.reshape(np.array([149.66,-229.5,5.04]) ,(3, 1))
+DUCKY_POS = np.reshape(np.array([149.66,-228.5,0]) ,(3, 1))
+# z = 5.04
 
 # Display poses of all objects
 # [ [Vector tag to camera] ,  [Rotation of tag] ]
@@ -42,6 +43,26 @@ def move_xyz(interface, target, pump_on = False):
     else:
         interface.send_absolute_angles(angles[0],angles[1],angles[2],0.0, interface.MOVE_MODE_JOINTS, pump_on)
 
+
+# get xyz of tag_index
+def get_xyz(interface, tag_index):
+    angles = interface.current_status.angles[0:3]
+
+    # Get current XYZ
+    P0t = DobotModel.forward_kinematics(angles)
+    # Renew data
+    data = camera.get_all_poses()[tag_index]
+
+    # Getting Desired XYZ of end effector
+    Pct = np.array(CAMERA_OFFSET)
+    R0t = DobotModel.R0T(angles)
+    Rtc = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])
+    R0c = np.matmul(R0t, Rtc)
+    Pta = np.matmul(R0c, data[0]) - np.matmul(R0c, Pct)
+
+    target = np.reshape(Pta, (3, 1)) + np.reshape(P0t, (3, 1))
+
+    return target
 
 # Touch the end effector to a detected object
 def touch(interface, tag_index, mode, pump_on = False):
@@ -254,6 +275,7 @@ if __name__ == '__main__':
     touch
     track
     grab ducky
+    place ducky
     arm calibration
     quit
     '''
@@ -298,8 +320,38 @@ if __name__ == '__main__':
 
             move_xyz(interface, DUCKY_POS, True)
 
-            time.sleep(1)
+            time.sleep(2)
             interface.send_absolute_angles(0,10,10,0, interface.MOVE_MODE_JOINTS, True)
+
+        elif command == "place ducky":
+            # Which object to place ducky on?
+            print object_selection
+            selection = int(input("Which object to place ducky on: "))
+            # Get data
+            data = camera.get_all_poses()[selection - 1]
+            if data != [None,None]:
+                goal_xyz = get_xyz(interface, selection - 1) + np.array([[0], [0], [45]])
+
+                ducky_xyz = DUCKY_POS + np.array([[0], [0], [30]])
+                move_xyz(interface, ducky_xyz, True)
+                time.sleep(1)
+
+                move_xyz(interface, DUCKY_POS, True)
+
+                time.sleep(2)
+
+                move_xyz(interface, ducky_xyz, True)
+                
+                time.sleep(1)
+
+                move_xyz(interface, goal_xyz, True)
+
+                time.sleep(2)
+
+                move_xyz(interface, goal_xyz, False)
+            else:
+                print "Object is not available."
+
         elif command == "touch":
             # Which object to touch?
             print object_selection
