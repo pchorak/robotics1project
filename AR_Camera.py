@@ -48,7 +48,7 @@ class Camera(threading.Thread):
         # Initialize video capture
         self.cap = cv2.VideoCapture(self.ID)
 
-        frameRate = 10.0
+        frameRate = 20.0
         frameWidth = 640
         frameHeight = 480
 
