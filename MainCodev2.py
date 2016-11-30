@@ -15,7 +15,11 @@ OBSTACLE = [425234, 51]
 REGISTERED_TAGS = [DUCKY, DUCKYBOT, OBSTACLE]
 CAMERA_OFFSET = [[-9.059], [-24.953], [30.019]]
 DUCKY_POS = np.reshape(np.array([149.66,-228.5,0]) ,(3, 1))
+<<<<<<< HEAD
 # z = 5.04
+=======
+
+>>>>>>> 466dcbcc9757c91f5e814868c51a15bd886c5506
 
 # Display poses of all objects
 # [ [Vector tag to camera] ,  [Rotation of tag] ]
@@ -43,22 +47,20 @@ def move_xyz(interface, target, pump_on = False):
     else:
         interface.send_absolute_angles(angles[0],angles[1],angles[2],0.0, interface.MOVE_MODE_JOINTS, pump_on)
 
-
-# get xyz of tag_index
-def get_xyz(interface, tag_index):
+# Get required XYZ to move end effector to AR tag
+def get_xyz(interface, xyz_from_camera):
     angles = interface.current_status.angles[0:3]
 
     # Get current XYZ
     P0t = DobotModel.forward_kinematics(angles)
-    # Renew data
-    data = camera.get_all_poses()[tag_index]
 
     # Getting Desired XYZ of end effector
     Pct = np.array(CAMERA_OFFSET)
     R0t = DobotModel.R0T(angles)
     Rtc = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])
     R0c = np.matmul(R0t, Rtc)
-    Pta = np.matmul(R0c, data[0]) - np.matmul(R0c, Pct)
+
+    Pta = np.matmul(R0c, xyz_from_camera) - np.matmul(R0c, Pct)
 
     target = np.reshape(Pta, (3, 1)) + np.reshape(P0t, (3, 1))
 
@@ -66,29 +68,12 @@ def get_xyz(interface, tag_index):
 
 # Touch the end effector to a detected object
 def touch(interface, tag_index, mode, pump_on = False):
-    angles = interface.current_status.angles[0:3]
 
-    # Get current XYZ
-    P0t = DobotModel.forward_kinematics(angles)
+    # Get the object XYZ position of the tag relative to the camera
+    object_xyz = camera.get_all_poses()[tag_index][0]
 
-
-    # Renew data
-    data = camera.get_all_poses()[tag_index]
-
-    # If arial mode and z is low, move up a bit
-    # NO LONGER NEEDED
-    if mode == 2 and P0t[2] < 0:
-        P0t = P0t + [0,0,50]
-        move_xyz(interface, P0t, pump_on)
-
-    # Getting Desired XYZ of end effector
-    Pct = np.array(CAMERA_OFFSET)
-    R0t = DobotModel.R0T(angles)
-    Rtc = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])
-    R0c = np.matmul(R0t, Rtc)
-    Pta = np.matmul(R0c, data[0]) - np.matmul(R0c, Pct)
-
-    target = np.reshape(Pta, (3, 1)) + np.reshape(P0t, (3, 1))
+    # Get the target XYZ position
+    target = get_xyz(interface, object_xyz)
 
     # DIRECT MODE
     if mode == 1:
@@ -144,6 +129,8 @@ def track(interface, camera, tag_index):
 
                 # From camera
                 Pca = np.reshape(data[0], (3,1))
+
+
                 # Hover above it (Z offest 5 * marker size)
                 Pca_des = np.array([[0], [0], [5 * REGISTERED_TAGS[tag_index][1]]])
                 correction = -1*np.matmul(R0c, Pca_des - Pca)
@@ -155,6 +142,8 @@ def track(interface, camera, tag_index):
 
                 # Get data
                 data = camera.get_all_poses()[tag_index]
+
+                print data
 
 
 # Search for AR Tag. DUCKY = 0  DUCKYBOT = 1   OBSTACLE = 2
@@ -229,6 +218,29 @@ def search(interface, camera, tag_index = -1):
     return None
 
 
+def place_ducky(interface, target):
+    # GETTING THE DUCKY
+    # Move 30mm above the ducky
+    ducky_xyz = DUCKY_POS + np.array([[0], [0], [30]])
+    move_xyz(interface, ducky_xyz, True)
+    time.sleep(1)
+    # Move directly onto the ducky with pump on
+    move_xyz(interface, DUCKY_POS, True)
+    time.sleep(2)
+    # Move back up 30mm with the pump still on
+    move_xyz(interface, ducky_xyz, True)
+    time.sleep(1)
+
+    # PLACING THE DUCKY ON THE DESIRED TARGET
+    # Get the position we want to place the ducky
+    goal_xyz = get_xyz(interface, target) + np.array([[0], [0], [45]])
+    # Move to desired position with pump on
+    move_xyz(interface, goal_xyz, True)
+    time.sleep(2)
+    # Release the pump
+    move_xyz(interface, goal_xyz, False)
+
+
 # USED FOR GETTING INPUT TO BREAK LOOPS
 def input_thread(usr_list):
     raw_input()
@@ -279,25 +291,27 @@ if __name__ == '__main__':
     search and place
     arm calibration
     quit
+
+    ENTER COMMAND:
     '''
     while True:
         print options
-        command = raw_input("Enter Command => ").lower()
+        command = raw_input("").lower()
 
         if command == "reset":
+            # Reset angles to default positition
             interface.send_absolute_angles(0,10,10,0)
 
         elif command == "arm calibration":
             angles = interface.current_status.angles[0:3]
             # Get current XYZ
             P0t = DobotModel.forward_kinematics(angles)
+            # Move down towards the table
             goal = [P0t[0],P0t[1], -20]
             move_xyz(interface, goal)
-
             time.sleep(5)
-
+            # Move 150mm in the y-axis
             goal2 = np.reshape(goal ,(3, 1)) + np.reshape(np.array([0,150,0]) ,(3, 1))
-
             move_xyz(interface, goal2)
 
 
@@ -314,49 +328,37 @@ if __name__ == '__main__':
             get_data(camera)
 
         elif command == "grab ducky":
-
-            target = DUCKY_POS + np.array([[0], [0], [30]])
-            move_xyz(interface, target, True)
+            # Move 30mm above the ducky
+            ducky_xyz = DUCKY_POS + np.array([[0], [0], [30]])
+            move_xyz(interface, ducky_xyz, True)
             time.sleep(1)
-
+            # Move directly onto the ducky with pump on
             move_xyz(interface, DUCKY_POS, True)
-
             time.sleep(2)
+            # Move back up 30mm with the pump still on
+            move_xyz(interface, ducky_xyz, True)
+            time.sleep(1)
+            # Move to default starting position
             interface.send_absolute_angles(0,10,10,0, interface.MOVE_MODE_JOINTS, True)
 
         elif command == "place ducky":
             # Which object to place ducky on?
             print object_selection
-            selection = int(input("Which object to place ducky on: "))
-            # Get data
-            data = camera.get_all_poses()[selection - 1]
-            if data != [None,None]:
-                goal_xyz = get_xyz(interface, selection - 1) + np.array([[0], [0], [45]])
-
-                ducky_xyz = DUCKY_POS + np.array([[0], [0], [30]])
-                move_xyz(interface, ducky_xyz, True)
-                time.sleep(1)
-
-                move_xyz(interface, DUCKY_POS, True)
-
-                time.sleep(2)
-
-                move_xyz(interface, ducky_xyz, True)
-
-                time.sleep(1)
-
-                move_xyz(interface, goal_xyz, True)
-
-                time.sleep(2)
-
-                move_xyz(interface, goal_xyz, False)
+            print "Which object to place ducky on?"
+            selection = int(input(""))
+            # Get AR tag position
+            target = camera.get_all_poses()[selection - 1][0]
+            if target != None:
+                # Place the ducky on the target
+                place_ducky(interface,target)
             else:
                 print "Object is not available."
 
         elif command == "touch":
             # Which object to touch?
             print object_selection
-            selection = int(input("Which object to touch: "))
+            print "Which object to touch?"
+            selection = int(input(""))
             # Get data
             data = camera.get_all_poses()[selection - 1]
             # Touch the object if it is available
@@ -375,43 +377,27 @@ if __name__ == '__main__':
         elif command == "search and place":
             # Which object to search for?
             print object_selection
-            selection = int(input("Which object to search for: "))
-            # search until tag is found
-            search(interface, camera, selection - 1)
-            # Get data
-            data = camera.get_all_poses()[selection - 1]
-            if data != [None,None]:
-                goal_xyz = get_xyz(interface, selection - 1) + np.array([[0], [0], [45]])
+            print "Which object to search for?"
+            selection = int(input(""))
+            target = None
+            # search until tag is found (Loop ensures that search is reactivated if tag is lost)
+            while target is None:
+                search(interface, camera, selection - 1)
+                time.sleep(.5) # Wait a bit in case the detected object was moving
 
-                ducky_xyz = DUCKY_POS + np.array([[0], [0], [30]])
-                move_xyz(interface, ducky_xyz, True)
-                time.sleep(1)
-
-                move_xyz(interface, DUCKY_POS, True)
-
-                time.sleep(2)
-
-                move_xyz(interface, ducky_xyz, True)
-
-                time.sleep(1)
-
-                move_xyz(interface, goal_xyz, True)
-
-                time.sleep(2)
-
-                move_xyz(interface, goal_xyz, False)
+                # Get AR tag position
+                target = camera.get_all_poses()[selection - 1][0]
+                if target != None:
+                    # Place the ducky on the target
+                    place_ducky(interface,target)
 
 
 
         elif command == "quit":
+            # Reset to default position
             interface.send_absolute_angles(0,10,10,0)
+            # Stop the camera device
             sys.stdout.write("Releasing camera...")
             camera.release()
             print "OK!"
             break;
-        elif command == "test":
-            interface.send_absolute_angles(-68, 10, 10, 0)
-            time.sleep(2)
-            interface.send_absolute_angles(0, 10, 10, 0)
-            time.sleep(2)
-            interface.send_absolute_angles(68, 10, 10, 0)
