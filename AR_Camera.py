@@ -207,10 +207,10 @@ class Camera(threading.Thread):
 
         # SolvePnP
         retVal, rvec, tvec = cv2.solvePnP(objPoints, imgPoints, self.camMatrix, self.distCoeff)
-        Roa, b = cv2.Rodrigues(rvec)
+        Rca, b = cv2.Rodrigues(rvec)
         Pca = tvec
 
-        return [Pca, Roa]
+        return [Pca, Rca]
 
     def get_all_poses(self):
         return (self.Ducky_Pose, self.Duckybot_Pose, self.Obstacle_Pose)
