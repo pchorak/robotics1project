@@ -116,7 +116,7 @@ def track(interface, camera, tag_index):
 
             # Desired
             Pca_des = np.array([[0], [0], [130]])
-            Poa_des = P0t + np.matmul(R0t, Ptc + np.matmul(Rtc, Pca_des))
+            P0a_des = P0t + np.matmul(R0t, Ptc + np.matmul(Rtc, Pca_des))
 
             # Smoothed estimate
             if P0a_est is None:
@@ -125,7 +125,7 @@ def track(interface, camera, tag_index):
             P0a_est = alpha*P0a + (1 - alpha)*P0a_est # update estimate with new measurement
 
             # If correction is notable, act on it
-            correction = R0a_des - P0a_est
+            correction = P0a_des - P0a_est
             if np.linalg.norm(correction) > 5:
                 move_xyz(interface, P0t + correction)
                 time.sleep(0.5)
