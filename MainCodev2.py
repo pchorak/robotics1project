@@ -3,6 +3,7 @@ import time
 import sys
 import threading
 import numpy as np
+import cv2
 import DobotModel
 import SerialInterface
 
@@ -245,13 +246,13 @@ def place_ducky(interface, target, joint_4_angle = 0):
     time.sleep(1)
 
     # Move to desired position with pump on
-    move_xyz(interface, goal_xyz, True)
+    move_xyz(interface, goal_xyz, True, joint_4_angle)
     time.sleep(2)
     # Release the pump
-    move_xyz(interface, goal_xyz, False)
+    move_xyz(interface, goal_xyz, False, joint_4_angle)
     time.sleep(1)
     # Move back up
-    move_xyz(interface, tmp, False)
+    move_xyz(interface, tmp, False, joint_4_angle)
     time.sleep(1)
     # Move to default position
     interface.send_absolute_angles(10, 10, 10, 0)
@@ -438,11 +439,15 @@ if __name__ == '__main__':
             # Get AR tag position
             data = camera.get_all_poses()[selection - 1]
             target = data[0]
-            angle = data[1] # NEED TO UPDATE THIS
             np.reshape(target, (3, 1))
             if target != None:
+                R0t = DobotModel.R0T(interface.current_status.angles[0:3])
+                Rtc = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])
+                Rca = data[1]
+                R0a = np.matmul(R0t,np.matmul(Rtc,Rca))
+                w = cv2.Rodrigues(R0a)
                 # Place the ducky on the target
-                place_ducky(interface,target, 0) # 0 NEEDS TO BE CORRECT ANGLE
+                place_ducky(interface,target, w[2]) # 0 NEEDS TO BE CORRECT ANGLE
             else:
                 print "Object is not available."
 
