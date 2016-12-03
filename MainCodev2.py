@@ -3,21 +3,21 @@ import time
 import sys
 import threading
 import numpy as np
-import cv2
+import scipy.linalg as linalg
 import DobotModel
 import SerialInterface
 
 #=====DEFINED CONSTANTS=====
-CAMERA_ID = 1
+CAMERA_ID = 0
 VIDEO_MODE = True
-DUCKY = [16273625, 25] # normally 16273625
-DUCKYBOT = [12345678, 25]
-OBSTACLE = [87654321, 25]
+DUCKY = [12345678, 25]
+DUCKYBOT = [16273625, 25] # normally 16273625
+OBSTACLE = [-100, 25.65] # [ -100, SIZE] returns any tag not equal to DUCKY/DUCKYBOT
 REGISTERED_TAGS = [DUCKY, DUCKYBOT, OBSTACLE]
 CAMERA_OFFSET = [[-9.059], [-24.953], [30.019]]
-DUCKY_POS = np.reshape(np.array([149.66,-228.5,0]) ,(3, 1))
+DUCKY_POS = np.reshape(np.array([150.66,-228.5,0]) ,(3, 1))
 MAXHEIGHT = 115
-CLEANUP_POS = np.reshape(np.array([149.66,-228.5,0]) ,(3, 1)) # UPDATE THIS TO BEHIND DUCKY
+GARBAGECAN_POS = np.reshape(np.array([0,-228.5,MAXHEIGHT]) ,(3, 1))
 
 TEST_TAG_1 = [11111111, 25]
 TEST_TAG_2 = [12345678, 25]
@@ -152,7 +152,7 @@ def track(interface, camera, tag_index):
 
 # Search for AR Tag. DUCKY = 0  DUCKYBOT = 1   OBSTACLE = 2
 # If tag_index is left undefined , it will search until any registered tag is found
-def search(interface, camera, tag_index = -1):
+def search(interface, camera, tag_index = -1, clean_mode = False):
 
     base_angle = interface.current_status.get_base_angle()
     direction = 1
@@ -170,8 +170,33 @@ def search(interface, camera, tag_index = -1):
 
                 # Get data
                 data = camera.get_all_poses()
+                
+                # Get 10 frames to search for garbage
+                if clean_mode and data[2] == [None, None]:
+                    for x in range(0,10):
+                        time.sleep(.1)
+                        data = camera.get_all_poses()
+                        if data[2] != [None, None]:
+                            break;
 
-                # print data
+                # if cleanup mode activated and you detected garbage, get rid of it
+                if clean_mode and data[2] != [None, None]:
+                    garbage_xyz = get_xyz(interface, data[2][0])
+                    touch(interface, 2, 1, True)
+                    time.sleep(1.5)
+                    tmp = np.zeros((3, 1))
+                    tmp[:, :] = garbage_xyz[:, :]
+                    tmp[2, 0] = 100
+                    move_xyz(interface, tmp, True)
+                    time.sleep(1)   
+                    
+                    move_xyz(interface, GARBAGECAN_POS, True)
+                    time.sleep(2) 
+                    move_xyz(interface, GARBAGECAN_POS, False)
+                    time.sleep(1)
+                    interface.send_absolute_angles(base_angle, 10, 10, 0)
+                    time.sleep(2)
+                    
 
                 # Search all tags
                 if tag_index == -1:
@@ -182,6 +207,7 @@ def search(interface, camera, tag_index = -1):
                     # Search for a specified tag
                     if data[tag_index] != [None, None]:
                         return data[tag_index]
+                    
 
                 base_angle = base_angle + 5
 
@@ -195,8 +221,33 @@ def search(interface, camera, tag_index = -1):
 
                 # Get data
                 data = camera.get_all_poses()
-
-                # print data
+                
+                
+                # Get 10 frames to search for garbage
+                if clean_mode and data[2] == [None, None]:
+                    for x in range(0,10):
+                        time.sleep(.1)
+                        data = camera.get_all_poses()
+                        if data[2] != [None, None]:
+                            break;                
+                
+                # if cleanup mode activated and you detected garbage, get rid of it
+                if clean_mode and data[2] != [None, None]:
+                    garbage_xyz = get_xyz(interface, data[2][0])
+                    touch(interface, 2, 1, True)
+                    time.sleep(1.5)
+                    tmp = np.zeros((3, 1))
+                    tmp[:, :] = garbage_xyz[:, :]
+                    tmp[2, 0] = 100
+                    move_xyz(interface, tmp, True)
+                    time.sleep(1)   
+                    
+                    move_xyz(interface, GARBAGECAN_POS, True)
+                    time.sleep(2) 
+                    move_xyz(interface, GARBAGECAN_POS, False)
+                    time.sleep(1)
+                    interface.send_absolute_angles(base_angle, 10, 10, 0)
+                    time.sleep(2)          
 
                 # Search all tags:
                 if tag_index == -1:
@@ -218,7 +269,7 @@ def search(interface, camera, tag_index = -1):
         direction = direction * -1
 
     # user requested to exit
-    interface.send_absolute_angles(10, 10, 10, 0)
+    interface.send_absolute_angles(0, 10, 10, 0)
     return None
 
 
@@ -230,13 +281,14 @@ def place_ducky(interface, target, joint_4_angle = 0):
     # GETTING THE DUCKY
     # Move 30mm above the ducky
     ducky_xyz = DUCKY_POS + np.array([[0], [0], [30]])
-    move_xyz(interface, ducky_xyz, True)
+    angles = DobotModel.inverse_kinematics(ducky_xyz)
+    move_xyz(interface, ducky_xyz, True, -angles[0])
     time.sleep(1)
     # Move directly onto the ducky with pump on
-    move_xyz(interface, DUCKY_POS, True)
+    move_xyz(interface, DUCKY_POS, True, -angles[0])
     time.sleep(2)
     # Move to max height with the pump still on
-    move_xyz(interface,np.reshape(np.array([149.66,-228.5,MAXHEIGHT]) ,(3, 1)), True)
+    move_xyz(interface,np.reshape(np.array([149.66,-228.5,MAXHEIGHT]) ,(3, 1)), True, joint_4_angle)
     time.sleep(1)
 
     tmp = np.zeros((3, 1))
@@ -255,7 +307,7 @@ def place_ducky(interface, target, joint_4_angle = 0):
     move_xyz(interface, tmp, False, joint_4_angle)
     time.sleep(1)
     # Move to default position
-    interface.send_absolute_angles(10, 10, 10, 0)
+    interface.send_absolute_angles(0, 10, 10, 0)
 
 
 # USED FOR GETTING INPUT TO BREAK LOOPS
@@ -309,7 +361,7 @@ if __name__ == '__main__':
     arm calibration
     touch test
     stack
-    cleanup
+    search place and clean
     quit
 
     ENTER COMMAND:
@@ -439,15 +491,17 @@ if __name__ == '__main__':
             # Get AR tag position
             data = camera.get_all_poses()[selection - 1]
             target = data[0]
-            np.reshape(target, (3, 1))
             if target != None:
-                R0t = DobotModel.R0T(interface.current_status.angles[0:3])
-                Rtc = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])
-                Rca = data[1]
-                R0a = np.matmul(R0t,np.matmul(Rtc,Rca))
-                w = cv2.Rodrigues(R0a)
+                # np.reshape(target, (3, 1))
+                # R0t = DobotModel.R0T(interface.current_status.angles[0:3])
+                # Rtc = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])
+                # Rca = data[1]
+                # print Rca
+                # R0a = np.matmul(R0t,np.matmul(Rtc,Rca))
+                # w = np.degrees(linalg.logm(R0a))
+                # print w
                 # Place the ducky on the target
-                place_ducky(interface,target, w[2]) # 0 NEEDS TO BE CORRECT ANGLE
+                place_ducky(interface,target, 0) # w[1,0] is not correct
             else:
                 print "Object is not available."
 
@@ -485,7 +539,7 @@ if __name__ == '__main__':
                 # Get AR tag position
                 data = camera.get_all_poses()[selection - 1]
                 target = data[0]
-                angle = data[1] # THIS NEEDS TO BE CORRECTED
+                # angle = data[1] # THIS NEEDS TO BE CORRECTED
                 if target != None:
                     # Place the ducky on the target
                     place_ducky(interface,target, 0) # 0 NEEDS TO BE ANGLE
@@ -493,6 +547,28 @@ if __name__ == '__main__':
                     interface.send_absolute_angles(0,10,10,0)
                     break;
 
+
+        elif command == "search place and clean":
+            # Which object to search for?
+            print object_selection
+            print "Which object to search for?"
+            selection = int(input(""))
+            target = None
+            # search until tag is found (Loop ensures that search is reactivated if tag is lost)
+            while target is None:
+                search(interface, camera, selection - 1, True)
+                time.sleep(.5) # Wait a bit in case the detected object was moving
+
+                # Get AR tag position
+                data = camera.get_all_poses()[selection - 1]
+                target = data[0]
+                # angle = data[1] # THIS NEEDS TO BE CORRECTED
+                if target != None:
+                    # Place the ducky on the target
+                    place_ducky(interface,target, 0) # 0 NEEDS TO BE ANGLE
+                    time.sleep(1)
+                    interface.send_absolute_angles(0,10,10,0)
+                    break;            
 
 
         elif command == "quit":

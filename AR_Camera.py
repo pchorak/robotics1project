@@ -165,7 +165,10 @@ class Camera(threading.Thread):
             elif (m.id == self.obstacle_tag[0]):
                 self.Obstacle_Pose = self.get_object_pose(m, self.obstacle_tag)
                 obstacle_unavailable = False
-
+            elif (self.obstacle_tag[0] == -100):
+                # Obstacle tag is in return any mode, get this unknown tag and set it to obstacle pose
+                self.Obstacle_Pose = self.get_object_pose(m, self.obstacle_tag)
+                obstacle_unavailable = False                
 
         # set poses for objects not found
         if ducky_unavailable:
