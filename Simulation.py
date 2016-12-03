@@ -42,7 +42,8 @@ class Simulation:
         """
         arm = DobotModel.get_mesh(angles)
 
-        fig = plt.figure()#plt.gcf()
+        #fig = plt.figure()
+        fig = plt.gcf()
         ax = Axes3D(fig)
         #plt.axis('equal')
         for Ta in arm:
@@ -54,5 +55,7 @@ class Simulation:
 
         plt.xlim([-np.ceil(r_max/np.sqrt(2)),r_max])
         plt.ylim([-r_max,r_max])
+        ax.set_zlim(-150, 250)
+        ax.view_init(elev=30.0, azim=60.0)
         plt.show()
         return fig
