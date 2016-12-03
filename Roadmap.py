@@ -47,6 +47,11 @@ class Roadmap:
         Returns a list of configuration tuples describing the path or []
         if no path is found.
         """
+        q0 = np.reshape(np.array(q0),3)
+        qf = np.reshape(np.array(qf),3)
+        if all(q0 == qf):
+            return [qf]
+
         n0 = len(self.G.node)
         nf = n0 + 1
 
@@ -108,9 +113,10 @@ class Roadmap:
         q1 = np.array(self.G.node[k1]['cfg'])
 
         # Sample the path at ~10mm intervals based on dp/dq at the midpoint
-        J = DobotModel.jacobian(tuple((q0+q1)/2.0))
-        dp = np.dot(J,q1-q0)
-        n = int(np.ceil(np.sqrt(np.dot(dp,np.transpose(dp)))/10.0))
+#       J = DobotModel.jacobian(tuple((q0+q1)/2.0))
+#       dp = np.dot(J,np.reshape(q1-q0)
+#       n = int(np.ceil(np.sqrt(np.dot(dp,np.transpose(dp)))/10.0))
+        n = 5
 
         # Interpolate intermediate configurations
         qk = zip(np.linspace(q0[0],q1[0],n),np.linspace(q0[1],q1[1],n), \
