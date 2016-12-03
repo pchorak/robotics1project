@@ -11,13 +11,13 @@ import Controller
 import AR_Camera
 
 #DUCKY = [16287382, 51]
-DUCKY = [56356251, 25]
+DUCKY = [16273625, 25]
 
 def keyboard_control(port):
         controller = Controller.Controller(port)
         
-        cam = AR_Camera.Camera(0,DUCKY)
-        cam.initialize()
+        cam = AR_Camera.Camera(0,True,DUCKY)
+        cam.start()
 
         # start screen to read keys
         screen = curses.initscr()
@@ -38,19 +38,14 @@ def keyboard_control(port):
                 time.sleep(1)
                 break
             elif (c == 99): # c
+                print "Capturing..."
                 time.sleep(1)
                 angle_list.append(controller.get_angles())
-                pose,_,_,_ = cam.capture_data()
+                pose = cam.Ducky_Pose
                 pca_list.append(pose[0])
+                print "Complete"
             elif (c == 109): # m
                 controller.switch_modes()
-            elif (c == 118): # v
-                if not vid:
-                    cam.activate_video()
-                    vid = True
-                else:
-                    cam.deactivate_video()
-                    vid = False
             elif (c == 61): # =
                 controller.change_effort(5)
             elif (c == 45): # -

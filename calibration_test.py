@@ -8,5 +8,6 @@ from campose import get_pose
 (ptc_est,Rtc_est,p0a_est) = get_pose(angle_list[0:-1],pca_list[0:-1])
 p0a = DobotModel.forward_kinematics(angle_list[-1])
 ptc_est[2] = ptc_est[2] + p0a[2] - p0a_est[2] # could use all elements if confident about p0a
+#ptc_est = ptc_est + np.reshape(p0a,(3,1)) - p0a_est
 print ptc_est
 print Rtc_est
