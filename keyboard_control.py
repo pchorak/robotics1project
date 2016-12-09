@@ -8,7 +8,9 @@ import argparse
 
 import DobotModel
 import Controller
-import AR_Camera
+CAMERA = False
+if CAMERA:
+    import AR_Camera
 
 #DUCKY = [16287382, 51]
 DUCKY = [16273625, 25]
@@ -16,8 +18,9 @@ DUCKY = [16273625, 25]
 def keyboard_control(port):
         controller = Controller.Controller(port)
         
-        cam = AR_Camera.Camera(0,True,DUCKY)
-        cam.start()
+        if CAMERA:
+            cam = AR_Camera.Camera(0,True,DUCKY)
+            cam.start()
 
         # start screen to read keys
         screen = curses.initscr()
@@ -37,7 +40,7 @@ def keyboard_control(port):
                 controller.stop()
                 time.sleep(1)
                 break
-            elif (c == 99): # c
+            elif (c == 99) and CAMERA: # c
                 print "Capturing..."
                 time.sleep(1)
                 angle_list.append(controller.get_angles())
