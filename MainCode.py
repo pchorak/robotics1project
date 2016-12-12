@@ -10,7 +10,7 @@ import Simulation
 import Roadmap
 
 #=====DEFINED CONSTANTS=====
-CAMERA_ID = 0
+CAMERA_ID = 1
 VIDEO_MODE = True
 DUCKY = [12345678, 25]
 DUCKYBOT = [16273625, 25] # normally 16273625
@@ -33,11 +33,11 @@ OBS_POLL = np.array([[[227.0,-198,-30],[227,-158,-30],[227,-158,400]], \
     [[227,-158,-30],[340,-158,-30],[227,-158,400]], \
     [[340,-198,-30],[340,-158,-30],[227,-158,400]]])
 OBSTACLES = [OBS_TABLE, OBS_POLL]
-sim = Simulation.Simulation()
-for obs in OBSTACLES:
-    sim.add_obstacles(obs)
-PRM = Roadmap.Roadmap(sim,100,np.array([[-90,90],[0,60],[0,60]]))
-#PRM = None # if not using roadmap
+#sim = Simulation.Simulation()
+#for obs in OBSTACLES:
+#    sim.add_obstacles(obs)
+#PRM = Roadmap.Roadmap(sim,100,np.array([[-90,90],[0,60],[0,60]]))
+PRM = None # if not using roadmap
 
 # Display poses of all objects
 # [ [Vector tag to camera] ,  [Rotation of tag] ]
@@ -63,15 +63,16 @@ def move_xyz(interface, target, pump_on = False, joint_4_angle = 0, path_plannin
     if any(np.isnan(angles)):
         print "Error: No solution for coordinates: ", target
     elif PRM is None or not path_planning:
-        interface.send_absolute_angles(angles[0],angles[1],angles[2], joint_4_angle, interface.MOVE_MODE_JOINTS, pump_on)
+        interface.send_absolute_angles(float(angles[0]),float(angles[1]),float(angles[2]), joint_4_angle, interface.MOVE_MODE_JOINTS, pump_on)
+
     else:
         start = interface.current_status.angles[0:3]
         print start
         print angles
         path = PRM.get_path(start, angles)
         for p in path:
-            interface.send_absolute_angles(p[0], p[1], p[2], joint_4_angle, interface.MOVE_MODE_JOINTS, pump_on)
-            time.sleep(1)
+            interface.send_absolute_angles(float(p[0]), float(p[1]), float(p[2]), joint_4_angle, interface.MOVE_MODE_JOINTS, pump_on)
+            #time.sleep(1)
 
 # Get required XYZ to move end effector to AR tag
 def get_xyz(interface, xyz_from_camera):
@@ -122,13 +123,13 @@ def track(interface, camera, tag_index):
     listener = threading.Thread(target=input_thread, args=(req_exit,))
     listener.start()
 
-    time.sleep(1)
+    #time.sleep(1)
 
     while not req_exit:
         # Only enter search if capture_data failed to find tag for 10 consecutive frames
         searching = True
         for x in range(0,30):
-            time.sleep(0.1)
+            #time.sleep(0.1)
             data = camera.get_all_poses()[tag_index]
             if data != [None, None]:
                 searching = False
@@ -164,7 +165,7 @@ def track(interface, camera, tag_index):
                 # If the change in desired XYZ is notable, move to track it
                 if np.linalg.norm(correction) > 2.5:
                     angles = move_xyz(interface, P0t + correction)
-                    time.sleep(0.5)
+                    #time.sleep(0.5)
 
                 # Get data
                 data = camera.get_all_poses()[tag_index]
@@ -192,11 +193,11 @@ def search(interface, camera, tag_index = -1, clean_mode = False, path_planning 
 
                 # Get data
                 data = camera.get_all_poses()
-                
+
                 # Get 10 frames to search for garbage
                 #if clean_mode and data[2] == [None, None]:
                 #    for x in range(0,10):
-                #        time.sleep(.1)
+                #        #time.sleep(.1)
                 #        data = camera.get_all_poses()
                 #        if data[2] != [None, None]:
                 #            break;
@@ -208,22 +209,22 @@ def search(interface, camera, tag_index = -1, clean_mode = False, path_planning 
 		    # Pick up the AR tag (garbage tag)
                     garbage_xyz = get_xyz(interface, data[2][0])
                     touch(interface, 2, 1, True)
-                    time.sleep(1.5)
+                    #time.sleep(1.5)
 		    # Go to max height above AR tag
                     tmp = np.zeros((3, 1))
                     tmp[:, :] = garbage_xyz[:, :]
                     tmp[2, 0] = 100
                     move_xyz(interface, tmp, True)
-                    time.sleep(1)   
+                    #time.sleep(1)
                     # Go to garbage can
                     move_xyz(interface, GARBAGECAN_POS, True, 0, path_planning)
-                    time.sleep(2) 
+                    #time.sleep(2)
                     move_xyz(interface, GARBAGECAN_POS, False)
-                    time.sleep(1)
+                    #time.sleep(1)
 		    move_xyz(interface, initial_pos, False, 0, path_planning)
                     interface.send_absolute_angles(base_angle, 10, 10, 0)
-                    time.sleep(2)
-                    
+                    #time.sleep(2)
+
 
                 # Search all tags
                 if tag_index == -1:
@@ -240,7 +241,7 @@ def search(interface, camera, tag_index = -1, clean_mode = False, path_planning 
 
                 interface.send_absolute_angles(base_angle, 10, 10, 0)
 
-                time.sleep(1)
+                #time.sleep(1)
         else:
             while base_angle > -100 :
                 if req_exit:
@@ -248,16 +249,16 @@ def search(interface, camera, tag_index = -1, clean_mode = False, path_planning 
 
                 # Get data
                 data = camera.get_all_poses()
-                
-                
+
+
                 # Get 10 frames to search for garbage
                 #if clean_mode and data[2] == [None, None]:
                 #    for x in range(0,10):
-                #        time.sleep(.1)
+                #        #time.sleep(.1)
                 #        data = camera.get_all_poses()
                 #        if data[2] != [None, None]:
-                #            break;                
-                
+                #            break;
+
                 # if cleanup mode activated and you detected garbage, get rid of it
                 if clean_mode and data[2] != [None, None]:
 		    # Remember our curent xyz
@@ -265,21 +266,21 @@ def search(interface, camera, tag_index = -1, clean_mode = False, path_planning 
 		    # Pick up the AR tag (garbage tag)
                     garbage_xyz = get_xyz(interface, data[2][0])
                     touch(interface, 2, 1, True)
-                    time.sleep(1.5)
+                    #time.sleep(1.5)
 		    # Go to max height above AR tag
                     tmp = np.zeros((3, 1))
                     tmp[:, :] = garbage_xyz[:, :]
                     tmp[2, 0] = 100
                     move_xyz(interface, tmp, True)
-                    time.sleep(1)   
+                    #time.sleep(1)
                     # Go to garbage can
                     move_xyz(interface, GARBAGECAN_POS, True, 0, path_planning)
-                    time.sleep(2) 
+                    #time.sleep(2)
                     move_xyz(interface, GARBAGECAN_POS, False)
-                    time.sleep(1)
+                    #time.sleep(1)
 		    move_xyz(interface, initial_pos, False, o, path_planning)
                     interface.send_absolute_angles(base_angle, 10, 10, 0)
-                    time.sleep(2)
+                    #time.sleep(2)
 
 
 
@@ -292,13 +293,13 @@ def search(interface, camera, tag_index = -1, clean_mode = False, path_planning 
                     # Search for a specified tag
                     if data[tag_index] != [None, None]:
                         return data[tag_index]
-                    
+
 
                 base_angle = base_angle - 5
 
                 interface.send_absolute_angles(base_angle, 10, 10, 0)
 
-                time.sleep(1)
+                #time.sleep(1)
 
         # change direction
         direction = direction * -1
@@ -318,30 +319,30 @@ def place_ducky(interface, target, joint_4_angle = 0, path_planning = False):
     ducky_xyz = DUCKY_POS + np.array([[0], [0], [30]])
     angles = DobotModel.inverse_kinematics(ducky_xyz)
     move_xyz(interface, ducky_xyz, True, -angles[0], path_planning)
-    time.sleep(1)
+    #time.sleep(1)
     # Move directly onto the ducky with pump on
     move_xyz(interface, DUCKY_POS, True, -angles[0])
-    time.sleep(2)
+    #time.sleep(2)
     # Move to max height with the pump still on
     move_xyz(interface,np.reshape(np.array([149.66,-228.5,MAXHEIGHT]) ,(3, 1)), True, joint_4_angle)
-    time.sleep(1)
+    #time.sleep(1)
 
     # Move to max height above the desired goal
     tmp = np.zeros((3, 1))
     tmp[:, :] = goal_xyz[:, :]
     tmp[2, 0] = MAXHEIGHT
     move_xyz(interface, tmp, True, joint_4_angle, path_planning)
-    time.sleep(1)
+    #time.sleep(1)
 
     # Move to desired position with pump on
     move_xyz(interface, goal_xyz, True, joint_4_angle, path_planning)
-    time.sleep(2)
+    #time.sleep(2)
     # Release the pump
     move_xyz(interface, goal_xyz, False, joint_4_angle)
-    time.sleep(1)
+    #time.sleep(1)
     # Move back up
     move_xyz(interface, tmp, False, joint_4_angle)
-    time.sleep(1)
+    #time.sleep(1)
     # Move to default position
     interface.send_absolute_angles(0, 10, 10, 0)
 
@@ -358,11 +359,11 @@ def input_thread(usr_list):
 if __name__ == '__main__':
 
     # INTITIALIZING SERIAL INTERFACE
-    interface = SerialInterface.SerialInterface('/dev/ttyACM0') # Linux
+    interface = SerialInterface.SerialInterface(6) # Linux
 
-    time.sleep(1)
+    #time.sleep(1)
     interface.send_absolute_angles(0,10,10,0)
-    time.sleep(1)
+    #time.sleep(1)
 
     # SET INITIAL XYZ:
     initial_xyz = DobotModel.forward_kinematics([0,10,10,0])
@@ -393,6 +394,7 @@ if __name__ == '__main__':
     track
     grab ducky
     place ducky
+    move test
     search and place
     arm calibration
     touch test
@@ -417,10 +419,41 @@ if __name__ == '__main__':
             # Move down towards the table
             goal = [P0t[0],P0t[1], -20]
             move_xyz(interface, goal)
-            time.sleep(5)
+            #time.sleep(5)
             # Move 150mm in the y-axis
             goal2 = np.reshape(goal ,(3, 1)) + np.reshape(np.array([0,150,0]) ,(3, 1))
             move_xyz(interface, goal2)
+
+
+	elif command == "move test":
+
+	    base_angle = interface.current_status.get_base_angle()
+	    direction = 1
+
+	    while True:
+		if direction == 1:
+		    while base_angle < 100 :
+
+
+			base_angle = base_angle + 5
+
+			interface.send_absolute_angles(base_angle, 10, 10, 0)
+
+			#time.sleep(1)
+		else:
+		    while base_angle > -100 :
+
+
+			# Get 10 frames to search for garbage
+
+			base_angle = base_angle - 5
+
+			interface.send_absolute_angles(base_angle, 10, 10, 0)
+
+			#time.sleep(1)
+
+		# change direction
+		direction = direction * -1
 
 
         elif command == "touch test":
@@ -430,15 +463,15 @@ if __name__ == '__main__':
                 goal_2 = get_xyz(interface, data[1][0])
                 goal_3 = get_xyz(interface, data[2][0])
                 move_xyz(interface, goal_1, False)
-                time.sleep(1)
+                #time.sleep(1)
                 interface.send_absolute_angles(0,10,10,0)
-                time.sleep(1)
+                #time.sleep(1)
                 move_xyz(interface, goal_2, False)
-                time.sleep(1)
+                #time.sleep(1)
                 interface.send_absolute_angles(0,10,10,0)
-                time.sleep(1)
+                #time.sleep(1)
                 move_xyz(interface, goal_3, False)
-                time.sleep(1)
+                #time.sleep(1)
                 interface.send_absolute_angles(0,10,10,0)
 
         elif command == "stack":
@@ -451,44 +484,44 @@ if __name__ == '__main__':
                     pickup_2 = get_xyz(interface, data[2][0])
 
                     move_xyz(interface, pickup_1, True)
-                    time.sleep(1)
+                    #time.sleep(1)
 
                     tmp = np.zeros((3, 1))
                     tmp[:, :] = pickup_1[:, :]
                     tmp[2, 0] = 0
                     move_xyz(interface, tmp, True)
-                    time.sleep(1)
+                    #time.sleep(1)
 
 
                     move_xyz(interface, drop_location_1, True)
-                    time.sleep(1)
+                    #time.sleep(1)
                     move_xyz(interface, drop_location_1, False)
-                    time.sleep(1)
+                    #time.sleep(1)
 
                     tmp = np.zeros((3, 1))
                     tmp[:, :] = drop_location_1[:, :]
                     tmp[2, 0] = 0
                     move_xyz(interface, tmp, True)
-                    time.sleep(1)
+                    #time.sleep(1)
 
                     tmp = np.zeros((3, 1))
                     tmp[:, :] = pickup_2[:, :]
                     tmp[2, 0] = 0
                     move_xyz(interface, tmp, True)
-                    time.sleep(1)
+                    #time.sleep(1)
 
 
                     move_xyz(interface, pickup_2, True)
-                    time.sleep(1)
+                    #time.sleep(1)
 
                     tmp = np.zeros((3, 1))
                     tmp[:, :] = pickup_2[:, :]
                     tmp[2, 0] = 0
                     move_xyz(interface, tmp, True)
-                    time.sleep(1)
+                    #time.sleep(1)
 
                     move_xyz(interface, drop_location_2, True)
-                    time.sleep(1)
+                    #time.sleep(1)
                     move_xyz(interface, drop_location_2, False)
 
                     interface.send_absolute_angles(0,10,10,0)
@@ -500,7 +533,7 @@ if __name__ == '__main__':
             P0t[2] = 100
             move_xyz(interface, P0t)
             # Allow the camera to refocus
-            time.sleep(2)
+            #time.sleep(2)
 
         elif command == "get data":
             get_data(camera)
@@ -509,13 +542,13 @@ if __name__ == '__main__':
             # Move 30mm above the ducky
             ducky_xyz = DUCKY_POS + np.array([[0], [0], [30]])
             move_xyz(interface, ducky_xyz, True)
-            time.sleep(1)
+            #time.sleep(1)
             # Move directly onto the ducky with pump on
             move_xyz(interface, DUCKY_POS, True)
-            time.sleep(2)
+            #time.sleep(2)
             # Move back up 30mm with the pump still on
             move_xyz(interface, ducky_xyz, True)
-            time.sleep(1)
+            #time.sleep(1)
             # Move to default starting position
             interface.send_absolute_angles(0,10,10,0, interface.MOVE_MODE_JOINTS, True)
 
@@ -570,7 +603,7 @@ if __name__ == '__main__':
             # search until tag is found (Loop ensures that search is reactivated if tag is lost)
             while target is None:
                 search(interface, camera, selection - 1)
-                time.sleep(.5) # Wait a bit in case the detected object was moving
+                #time.sleep(.5) # Wait a bit in case the detected object was moving
 
                 # Get AR tag position
                 data = camera.get_all_poses()[selection - 1]
@@ -579,7 +612,7 @@ if __name__ == '__main__':
                 if target != None:
                     # Place the ducky on the target
                     place_ducky(interface,target, 0) # 0 NEEDS TO BE ANGLE
-                    time.sleep(1)
+                    #time.sleep(1)
                     interface.send_absolute_angles(0,10,10,0)
                     break;
 
@@ -599,7 +632,7 @@ if __name__ == '__main__':
             # search until tag is found (Loop ensures that search is reactivated if tag is lost)
             while target is None:
                 search(interface, camera, selection - 1, True, path_planning)
-                time.sleep(.5) # Wait a bit in case the detected object was moving
+                #time.sleep(.5) # Wait a bit in case the detected object was moving
 
                 # Get AR tag position
                 data = camera.get_all_poses()[selection - 1]
@@ -608,10 +641,10 @@ if __name__ == '__main__':
                 if target != None:
                     # Place the ducky on the target
                     place_ducky(interface,target, 0, path_planning) # 0 NEEDS TO BE ANGLE
-                    time.sleep(1)
+                    #time.sleep(1)
                     interface.send_absolute_angles(0,10,10,0)
-                    break; 
-          
+                    break;
+
 
 
         elif command == "quit":

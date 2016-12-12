@@ -41,11 +41,7 @@ class SerialInterface:
         try:
             self.serial_connection = serial.Serial(
                 port=port_name,
-                baudrate=baud_rate,
-                parity=serial.PARITY_NONE,
-                stopbits=serial.STOPBITS_ONE,
-                bytesize=serial.EIGHTBITS
-                ,timeout=0
+                baudrate=baud_rate
             )
         except serial.SerialException as e:
             print "Could not connect", e
@@ -107,6 +103,7 @@ class SerialInterface:
         if DobotModel.valid_angles((base,rear,front)):
             if not self.prev[0:3] == [base, rear, front]:
                 self._send_absolute_command(False, base, rear, front, rot,  move_mode, isGrab)
+
             elif not self.prev[4] == isGrab:
                 print 'no change in angles (%d, %d, %d)' % (base, rear, front)
                 if isGrab:
@@ -118,6 +115,15 @@ class SerialInterface:
             self.prev = [base, rear, front, rot, isGrab]
         else:
             print 'invalid angles (%d, %d, %d)' % (base, rear, front)
+        # Wait until movement is complete
+        position = self.current_status.angles
+        position = [round(position[0],3),round(position[1],3),round(position[2],3),round(position[3],3)]
+        goal = [round(base,3), round(rear,3), round(front,3), round(rot,3)]
+        while position != goal:
+            position = self.current_status.angles
+            position = [round(position[0],3),round(position[1],3),round(position[2],3),round(position[3],3)]
+            time.sleep(0.05)
+        return
 
     def set_initial_angles(self, rear_arm_angle, front_arm_angle):
         print 'setting angles to', rear_arm_angle, front_arm_angle
