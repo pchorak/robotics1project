@@ -181,7 +181,7 @@ def track(interface, camera, tag_index):
                 # If the change in desired XYZ is notable, move to track it
                 correction = P0a_des - P0a_est
                 if np.linalg.norm(correction) > 1.0:
-                    angles = move_xyz(interface, P0t + correction)
+                    angles = move_xyz(interface, P0t - correction)
 
                 # Get data
                 data = camera.get_all_poses()[tag_index]
@@ -231,6 +231,7 @@ def search(interface, camera, tag_index = -1, clean_mode = False, path_planning 
 
 		    move_xyz(interface, initial_pos, False, 0, path_planning)
                     interface.send_absolute_angles(base_angle, 10, 10, 0)
+                    continue
 
 
 
@@ -276,6 +277,7 @@ def search(interface, camera, tag_index = -1, clean_mode = False, path_planning 
                     move_xyz(interface, GARBAGECAN_POS, True, 0, path_planning)
 
                     move_xyz(interface, GARBAGECAN_POS, False)
+                    continue
 
 		    move_xyz(interface, initial_pos, False, o, path_planning)
                     interface.send_absolute_angles(base_angle, 10, 10, 0)
@@ -355,7 +357,7 @@ if __name__ == '__main__':
 
     # INTITIALIZING SERIAL INTERFACE
      # 6 Refers to COM7 For Windows, Leave blank for linux or specify a device, example: /dev/ttyACM0
-    interface = SerialInterface.SerialInterface(6)
+    interface = SerialInterface.SerialInterface()
 
     interface.send_absolute_angles(0,10,10,0)
 
