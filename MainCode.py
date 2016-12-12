@@ -36,12 +36,6 @@ OBSTACLES = [OBS_TABLE, OBS_POLL]
 
 
 #COMMENT OUT WHEN THERE ARE NO OBSTACLES (DISABLE PATH PLANNING)
-'''
-sim = Simulation.Simulation()
-for obs in OBSTACLES:
-    sim.add_obstacles(obs)
-PRM = Roadmap.Roadmap(sim,100,np.array([[-90,90],[0,60],[0,60]]))
-'''
 #sim = Simulation.Simulation()
 #for obs in OBSTACLES:
 #    sim.add_obstacles(obs)
@@ -71,13 +65,11 @@ def move_xyz(interface, target, pump_on = False, joint_4_angle = 0, path_plannin
     angles = get_angles(target)
     if any(np.isnan(angles)):
         print "Error: No solution for coordinates: ", target
-    elif PRM is None or not path_planning:
+    elif not path_planning:
         interface.send_absolute_angles(float(angles[0]),float(angles[1]),float(angles[2]), joint_4_angle, interface.MOVE_MODE_JOINTS, pump_on)
 
     else:
         start = interface.current_status.angles[0:3]
-        print start
-        print angles
         path = PRM.get_path(start, angles)
         for p in path:
             interface.send_absolute_angles(float(p[0]), float(p[1]), float(p[2]), joint_4_angle, interface.MOVE_MODE_JOINTS, pump_on)
@@ -314,8 +306,8 @@ def place_ducky(interface, target, joint_4_angle = 0, path_planning = False):
     goal_xyz = get_xyz(interface, target) + np.array([[0], [0], [43]])
 
     # GETTING THE DUCKY
-    # Move 30mm above the ducky
-    ducky_xyz = DUCKY_POS + np.array([[0], [0], [30]])
+    # Move 40mm above the ducky
+    ducky_xyz = DUCKY_POS + np.array([[0], [0], [40]])
     angles = DobotModel.inverse_kinematics(ducky_xyz)
     move_xyz(interface, ducky_xyz, True, -angles[0], path_planning)
 

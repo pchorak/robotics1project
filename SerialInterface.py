@@ -110,6 +110,7 @@ class SerialInterface:
                     self.send_jog_command(False, 9, 0)
                 else:
                     self.send_jog_command(False,10, 0)
+                return
             else:
                 print 'no changes'
             self.prev = [base, rear, front, rot, isGrab]
