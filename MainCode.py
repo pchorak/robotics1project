@@ -132,6 +132,9 @@ def track(interface, camera, tag_index):
     listener = threading.Thread(target=input_thread, args=(req_exit,))
     listener.start()
 
+    alpha = 0.2 # weight of new measurements
+    P0a_est = None # estimate of AR tag position
+
     while not req_exit:
         # Only enter search if capture_data failed to find tag for 10 consecutive frames
         searching = True
