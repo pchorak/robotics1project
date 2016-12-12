@@ -40,12 +40,13 @@ def keyboard_control(port):
                 controller.stop()
                 time.sleep(1)
                 break
-            elif (c == 99) and CAMERA: # c
+            elif (c == 99): # c
                 print "Capturing..."
-                time.sleep(1)
+                time.sleep(0.3)
                 angle_list.append(controller.get_angles())
-                pose = cam.Ducky_Pose
-                pca_list.append(pose[0])
+                if CAMERA:
+                    pose = cam.Ducky_Pose
+                    pca_list.append(pose[0])
                 print "Complete"
             elif (c == 109): # m
                 controller.switch_modes()
