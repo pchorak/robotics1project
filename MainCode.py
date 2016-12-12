@@ -123,6 +123,9 @@ def track(interface, camera, tag_index):
     listener = threading.Thread(target=input_thread, args=(req_exit,))
     listener.start()
 
+    alpha = 0.2 # weight of new measurements
+    P0a_est = None # estimate of AR tag position
+
     #time.sleep(1)
 
     while not req_exit:
@@ -151,19 +154,27 @@ def track(interface, camera, tag_index):
                 R0t = DobotModel.R0T(angles)
 
                 # From calibration
+                Pct = np.array(CAMERA_OFFSET)
                 Rtc = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])
                 R0c = np.matmul(R0t,Rtc)
 
                 # From camera
                 Pca = np.reshape(data[0], (3,1))
 
-
                 # Hover above it (Z offest 5 * marker size)
                 Pca_des = np.array([[0], [0], [5 * REGISTERED_TAGS[tag_index][1]]])
-                correction = -1*np.matmul(R0c, Pca_des - Pca)
+                # correction = -1*np.matmul(R0c, Pca_des - Pca)
+                P0a_des = P0t + np.matmul(R0c, Pca_des - Pct)
+
+                # Smoothed estimate
+                if P0a_est is None:
+                    P0a_est = P0a_des # initialize so no movement required
+                P0a =  P0t + np.matmul(R0c, Pca - Pct) # measured
+                P0a_est = alpha*P0a + (1 - alpha)*P0a_est # update estimate with new measurement
 
                 # If the change in desired XYZ is notable, move to track it
-                if np.linalg.norm(correction) > 2.5:
+                correction = P0a_des - P0a_est
+                if np.linalg.norm(correction) > 1.0:
                     angles = move_xyz(interface, P0t + correction)
                     #time.sleep(0.5)
 
