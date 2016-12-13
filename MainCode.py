@@ -17,7 +17,7 @@ DUCKYBOT = [16273625, 25] # normally 16273625
 OBSTACLE = [-100, 25.65] # [ -100, SIZE] returns any tag not equal to DUCKY/DUCKYBOT
 REGISTERED_TAGS = [DUCKY, DUCKYBOT, OBSTACLE]
 CAMERA_OFFSET = [[-9.059], [-24.953], [30.019]]
-DUCKY_POS = np.reshape(np.array([149.66,-228.8,0]) ,(3, 1))
+DUCKY_POS = np.reshape(np.array([149.66,-228.8,-1]) ,(3, 1))
 MAXHEIGHT = 115
 GARBAGECAN_POS = np.reshape(np.array([0,-228.5,MAXHEIGHT]) ,(3, 1))
 
@@ -416,7 +416,6 @@ if __name__ == '__main__':
     grab ducky
     place ducky
     search and place
-    search place and clean
     arm calibration
     touch test
     stack
@@ -536,39 +535,24 @@ if __name__ == '__main__':
             print object_selection
             print "Which object to search for?"
             selection = int(input(""))
-            target = None
-            # search until tag is found (Loop ensures that search is reactivated if tag is lost)
-            while target is None:
-                return_code = search(interface, camera, selection - 1)
-		# User requested to exit the program during the search process
-		if return_code == None:
-		    break;
-                # Get AR tag position
-                data = camera.get_all_poses()[selection - 1]
-                target = data[0]
-                if target != None:
-                    # Place the ducky on the target
-                    place_ducky(interface,target, 0)
-		    # Reset
-                    interface.send_absolute_angles(0,10,10,0)
-                    break;
-
-
-        elif command == "search place and clean":
-            # Which object to search for?
-            print object_selection
-            print "Which object to search for?"
-            selection = int(input(""))
+	    # Do you wish to activate clean mode?
+            print "Clean workspace? (Throw unknown obstacles in trash) (Y/N)"
+	    clean_mode = raw_input("")	 
+	    if clean_mode.upper() == "Y":
+	        clean_mode = True
+	    else:
+		clean_mode = False	    
+	    # Do you wish to activate path planning?
             print "Avoid obstacle? (Use path planning) (Y/N)"
-	    avoid = raw_input("")
-	    if avoid.upper() == "Y":
+	    path_planning = raw_input("")
+	    if path_planning.upper() == "Y":
 	        path_planning = True
 	    else:
 		path_planning = False
             target = None
             # search until tag is found (Loop ensures that search is reactivated if tag is lost)
             while target is None:
-		return_code = search(interface, camera, selection - 1)
+		return_code = search(interface, camera, selection - 1, clean_mode)
 		# User requested to exit the program during the search process
 		if return_code == None:
 		    break;
@@ -590,5 +574,6 @@ if __name__ == '__main__':
             # Stop the camera device
             sys.stdout.write("Releasing camera...")
             camera.release()
+	    camera.join()
             print "OK!"
             break;

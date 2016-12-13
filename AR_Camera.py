@@ -70,14 +70,12 @@ class Camera(threading.Thread):
         self.thresh = 0.4
         self.thresh_img = np.zeros((frameHeight, frameWidth, 3), dtype=np.uint8)
 
-    def release(self):
+    def release(self):     
+        self.is_stopped = True
+        time.sleep(1)
         # get rid of video stream window
         if self.play_video:
-            cv2.destroyAllWindows()
-            for i in range (1,5):
-                time.sleep(.1)
-                cv2.waitKey(1)
-
+            cv2.destroyWindow('live')
         # Release video capture
         self.cap.release()
 
@@ -100,7 +98,8 @@ class Camera(threading.Thread):
 
 
     def run(self):
-        while True:
+        self.is_stopped = False
+        while not self.is_stopped:
             # Get Data as often as possible if playing video or set to constantly update
             if self.constant_update or self.play_video:
                 self.capture_data()
