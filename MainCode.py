@@ -178,8 +178,6 @@ def track(interface, camera, tag_index):
                 # Get data
                 data = camera.get_all_poses()[tag_index]
 
-                #print data
-
 
 # Search for AR Tag. DUCKY = 0  DUCKYBOT = 1   OBSTACLE = 2
 # If tag_index is left undefined , it will search until any registered tag is found
@@ -196,6 +194,7 @@ def search(interface, camera, tag_index = -1, clean_mode = False, path_planning 
     while not req_exit:
         if direction == 1:
             while base_angle < 100 :
+		# USER INPUT TO EXIT
                 if req_exit:
                     return None
 
@@ -218,11 +217,10 @@ def search(interface, camera, tag_index = -1, clean_mode = False, path_planning 
 
                     # Go to garbage can
                     move_xyz(interface, GARBAGECAN_POS, True, 0, path_planning)
-
+		    # Release Garbage
                     move_xyz(interface, GARBAGECAN_POS, False)
-
+		    # Return to last position during searching process
 		    move_xyz(interface, initial_pos, False, 0, path_planning)
-                    interface.send_absolute_angles(base_angle, 10, 10, 0)
                     continue
 
 
@@ -245,6 +243,7 @@ def search(interface, camera, tag_index = -1, clean_mode = False, path_planning 
 
         else:
             while base_angle > -100 :
+		# USER INPUT TO EXIT
                 if req_exit:
                     return None
 
@@ -265,16 +264,13 @@ def search(interface, camera, tag_index = -1, clean_mode = False, path_planning 
                     tmp[2, 0] = 100
                     move_xyz(interface, tmp, True)
 
-                    # Go to garbage can
-                    move_xyz(interface, GARBAGECAN_POS, True, 0, path_planning)
-
-                    move_xyz(interface, GARBAGECAN_POS, False)
-                    continue
-
-		    move_xyz(interface, initial_pos, False, o, path_planning)
-                    interface.send_absolute_angles(base_angle, 10, 10, 0)
-
-
+		    # Go to garbage can
+		    move_xyz(interface, GARBAGECAN_POS, True, 0, path_planning)
+		    # Release Garbage
+		    move_xyz(interface, GARBAGECAN_POS, False)
+		    # Return to last position during searching process
+		    move_xyz(interface, initial_pos, False, 0, path_planning)
+		    continue
 
 
                 # Search all tags
@@ -334,6 +330,46 @@ def place_ducky(interface, target, joint_4_angle = 0, path_planning = False):
 
     # Move to default position
     interface.send_absolute_angles(0, 10, 10, 0)
+    
+    
+# Stack 3 tags. All tags must be registered (DUCKY, DUCKYBOT OBSTACLE) and be initially in view
+def stack(interface, cam_data):
+    # Calculate the drop locations
+    drop_location_1 = np.reshape(get_xyz(interface, cam_data[0][0]) ,(3, 1)) + np.reshape(np.array([0,0,10]) ,(3, 1))
+    drop_location_2 = np.reshape(get_xyz(interface, cam_data[0][0]) ,(3, 1)) + np.reshape(np.array([0,0,20]) ,(3, 1))
+    # Calculate the pickup locations
+    pickup_1 = get_xyz(interface, cam_data[1][0])
+    pickup_2 = get_xyz(interface, cam_data[2][0])
+
+    # Pickup the first tag
+    move_xyz(interface, pickup_1, True)
+    tmp = np.zeros((3, 1))
+    tmp[:, :] = pickup_1[:, :]
+    tmp[2, 0] = 0
+    move_xyz(interface, tmp, True)
+
+    # Dropoff first tag
+    move_xyz(interface, drop_location_1, True)
+    move_xyz(interface, drop_location_1, False)
+    tmp = np.zeros((3, 1))
+    tmp[:, :] = drop_location_1[:, :]
+    tmp[2, 0] = 0
+    move_xyz(interface, tmp, True)
+
+    # Pickup second tag
+    tmp = np.zeros((3, 1))
+    tmp[:, :] = pickup_2[:, :]
+    tmp[2, 0] = 0
+    move_xyz(interface, tmp, True)
+    move_xyz(interface, pickup_2, True)
+    tmp = np.zeros((3, 1))
+    tmp[:, :] = pickup_2[:, :]
+    tmp[2, 0] = 0
+    move_xyz(interface, tmp, True)
+
+    # Dropoff second tag
+    move_xyz(interface, drop_location_2, True)
+    move_xyz(interface, drop_location_2, False)    
 
 
 # USED FOR GETTING INPUT TO BREAK LOOPS
@@ -349,13 +385,10 @@ if __name__ == '__main__':
 
     # INTITIALIZING SERIAL INTERFACE
      # 6 Refers to COM7 For Windows, Leave blank for linux or specify a device, example: /dev/ttyACM0
-    interface = SerialInterface.SerialInterface()
+    interface = SerialInterface.SerialInterface(6)
 
+    # Go to initial starting position
     interface.send_absolute_angles(0,10,10,0)
-
-    # SET INITIAL XYZ:
-    initial_xyz = DobotModel.forward_kinematics([0,10,10,0])
-
 
     # INITIALIZING CAMERA
     sys.stdout.write("Initiliazing the Camera..." )
@@ -382,12 +415,11 @@ if __name__ == '__main__':
     track
     grab ducky
     place ducky
-    move test
     search and place
+    search place and clean
     arm calibration
     touch test
     stack
-    search place and clean
     quit
 
     ENTER COMMAND:
@@ -401,6 +433,8 @@ if __name__ == '__main__':
             interface.send_absolute_angles(0,10,10,0)
 
         elif command == "arm calibration":
+	    # THIS METHOD SHOULD BE MODIFIED TO VARIOUS DESIRED POINTS
+	    # AFTER EACH RUN, RECORD THE ACCURACY OF THE MOVEMENT
             angles = interface.current_status.angles[0:3]
             # Get current XYZ
             P0t = DobotModel.forward_kinematics(angles)
@@ -413,57 +447,33 @@ if __name__ == '__main__':
 
 
         elif command == "touch test":
+	    # Get camera capture data
             data = camera.get_all_poses()
+	    # If all objects are in view, perform the touch test
             if data[0] != [None, None] and data[1] != [None, None] and data[2] != [None, None]:
+		# Determine desired XYZ coordinates for tag 1 + 2 + 3
                 goal_1 = get_xyz(interface, data[0][0])
                 goal_2 = get_xyz(interface, data[1][0])
                 goal_3 = get_xyz(interface, data[2][0])
+		# Touch first tag and then reset
                 move_xyz(interface, goal_1, False)
                 interface.send_absolute_angles(0,10,10,0)
+		# Touch second tag and then reset
                 move_xyz(interface, goal_2, False)
                 interface.send_absolute_angles(0,10,10,0)
+		# Touch third tag and then reset
                 move_xyz(interface, goal_3, False)
                 interface.send_absolute_angles(0,10,10,0)
 
         elif command == "stack":
+	        # Get camera data
                 data = camera.get_all_poses()
+		
+		# Only stack if all tags are in view
                 if data[0] != [None, None] and data[1] != [None, None] and data[2] != [None, None]:
-                    drop_location_1 = np.reshape(get_xyz(interface, data[0][0]) ,(3, 1)) + np.reshape(np.array([0,0,10]) ,(3, 1))
-                    drop_location_2 = np.reshape(get_xyz(interface, data[0][0]) ,(3, 1)) + np.reshape(np.array([0,0,20]) ,(3, 1))
-
-                    pickup_1 = get_xyz(interface, data[1][0])
-                    pickup_2 = get_xyz(interface, data[2][0])
-
-                    move_xyz(interface, pickup_1, True)
-
-                    tmp = np.zeros((3, 1))
-                    tmp[:, :] = pickup_1[:, :]
-                    tmp[2, 0] = 0
-                    move_xyz(interface, tmp, True)
-
-                    move_xyz(interface, drop_location_1, True)
-                    move_xyz(interface, drop_location_1, False)
-
-                    tmp = np.zeros((3, 1))
-                    tmp[:, :] = drop_location_1[:, :]
-                    tmp[2, 0] = 0
-                    move_xyz(interface, tmp, True)
-
-                    tmp = np.zeros((3, 1))
-                    tmp[:, :] = pickup_2[:, :]
-                    tmp[2, 0] = 0
-                    move_xyz(interface, tmp, True)
-
-                    move_xyz(interface, pickup_2, True)
-
-                    tmp = np.zeros((3, 1))
-                    tmp[:, :] = pickup_2[:, :]
-                    tmp[2, 0] = 0
-                    move_xyz(interface, tmp, True)
-
-                    move_xyz(interface, drop_location_2, True)
-                    move_xyz(interface, drop_location_2, False)
-
+		    # Stack the AR tags
+                    stack(interface,data)
+		    # Reset
                     interface.send_absolute_angles(0,10,10,0)
 
 
@@ -472,9 +482,9 @@ if __name__ == '__main__':
             P0t = DobotModel.forward_kinematics(interface.current_status.get_angles())
             P0t[2] = 100
             move_xyz(interface, P0t)
-            # Allow the camera to refocus
 
         elif command == "get data":
+	    # This will print out the current camera capture data
             get_data(camera)
 
         elif command == "grab ducky":
@@ -497,16 +507,7 @@ if __name__ == '__main__':
             data = camera.get_all_poses()[selection - 1]
             target = data[0]
             if target != None:
-                # np.reshape(target, (3, 1))
-                # R0t = DobotModel.R0T(interface.current_status.angles[0:3])
-                # Rtc = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])
-                # Rca = data[1]
-                # print Rca
-                # R0a = np.matmul(R0t,np.matmul(Rtc,Rca))
-                # w = np.degrees(linalg.logm(R0a))
-                # print w
-                # Place the ducky on the target
-                place_ducky(interface,target, 0, True) # w[1,0] is not correct
+                place_ducky(interface,target, 0, True)
             else:
                 print "Object is not available."
 
@@ -538,15 +539,17 @@ if __name__ == '__main__':
             target = None
             # search until tag is found (Loop ensures that search is reactivated if tag is lost)
             while target is None:
-                search(interface, camera, selection - 1)
-
+                return_code = search(interface, camera, selection - 1)
+		# User requested to exit the program during the search process
+		if return_code == None:
+		    break;
                 # Get AR tag position
                 data = camera.get_all_poses()[selection - 1]
                 target = data[0]
-                # angle = data[1] # THIS NEEDS TO BE CORRECTED
                 if target != None:
                     # Place the ducky on the target
-                    place_ducky(interface,target, 0) # 0 NEEDS TO BE ANGLE
+                    place_ducky(interface,target, 0)
+		    # Reset
                     interface.send_absolute_angles(0,10,10,0)
                     break;
 
@@ -565,8 +568,10 @@ if __name__ == '__main__':
             target = None
             # search until tag is found (Loop ensures that search is reactivated if tag is lost)
             while target is None:
-                search(interface, camera, selection - 1, True, path_planning)
-
+		return_code = search(interface, camera, selection - 1)
+		# User requested to exit the program during the search process
+		if return_code == None:
+		    break;
                 # Get AR tag position
                 data = camera.get_all_poses()[selection - 1]
                 target = data[0]

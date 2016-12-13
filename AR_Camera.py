@@ -7,7 +7,7 @@ from hampy import detect_markers
 import warnings
 
 class Camera(threading.Thread):
-    def __init__(self, camera_id = 0, video_mode = False, ducky = [None, None] ,duckybot = [None, None], obstacle = [None, None]):
+    def __init__(self, camera_id = 0, video_mode = False, ducky = [None, None] ,duckybot = [None, None], obstacle = [None, None], constant_update = True):
         warnings.simplefilter("ignore")
 
         threading.Thread.__init__(self)
@@ -17,6 +17,10 @@ class Camera(threading.Thread):
         self.ducky_tag = ducky
         self.duckybot_tag = duckybot
         self.obstacle_tag = obstacle
+        
+        # Should the program get data continuously or only when requested?
+        # Set to false if you have limited cpu resources
+        self.constant_update = constant_update
 
         # Intrinsic Parameters
         self.camMatrix = np.zeros((3, 3),dtype=np.float64)
@@ -97,8 +101,9 @@ class Camera(threading.Thread):
 
     def run(self):
         while True:
-            # Get Data
-            self.capture_data()
+            # Get Data as often as possible if playing video or set to constantly update
+            if self.constant_update or self.play_video:
+                self.capture_data()
 
             # Show Video
             if self.play_video:
@@ -216,4 +221,8 @@ class Camera(threading.Thread):
         return [Pca, Rca]
 
     def get_all_poses(self):
+        # If the program is set to not automatically capture data, capture it now
+        if not self.constant_update and not self.play_video:
+            self.capture_data()     
+        # Return up to date data
         return (self.Ducky_Pose, self.Duckybot_Pose, self.Obstacle_Pose)
