@@ -22,13 +22,13 @@ link2 = np.transpose(np.matrix([[10.0,-15,0],[-50,-15,0],[10,15,0],[-50,15,0], \
     [10,-15,l2],[-50,-15,l2],[10,15,l2],[-50,15,l2]]))
 hand1 = np.transpose(np.matrix([[0.0,-8,-67],[0,-8,15],[0,8,-67],[0,8,15], \
     [75,-8,-67],[75,-8,15],[75,8,-67],[75,8,15]]))
-hand = np.transpose(np.matrix([[75.0,-40,-50],[75,-40,50],[75,30,-50],[75,30,50], \
+hand2 = np.transpose(np.matrix([[75.0,-40,-50],[75,-40,50],[75,30,-50],[75,30,50], \
     [105,-40,-50],[105,-40,50],[105,30,-50],[105,30,50]]))
-#hand = np.hstack((hand1,hand2))
+hand = np.hstack((hand1,hand2))
 
 # Faces defined relative to concatonated vertex list
 tube = np.array([[0,1,4],[1,4,5],[1,3,5],[3,5,7],[3,2,7],[2,7,6],[2,0,6],[0,6,4]])
-faces = np.vstack(([[0,1,3],[0,2,3]],tube,tube+8,tube+16,[[20,21,23],[20,22,23]]))
+faces = np.vstack(([[0,1,3],[0,2,3]],tube,tube+8,tube+16,tube+24,[[20,21,23],[20,22,23]]))
 
 # Precompute some quantities
 l1_sq = pow(l1,2)

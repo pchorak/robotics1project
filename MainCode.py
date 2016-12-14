@@ -26,12 +26,12 @@ TEST_TAG_2 = [12345678, 25]
 TEST_TAG_3 = [87654321, 25]
 TEST_TAG_4 = [56473627, 25]
 
-OBS_TABLE = np.array([[[-245,-345,-60],[-245,345,-60],[345,345,-60]], \
-    [[-245,-345,-60],[345,-345,-60],[345,345,-60]]])
-OBS_POLL = np.array([[[227.0,-198,-30],[227,-158,-30],[227,-158,400]], \
-    [[227,-198,-30],[340,-198,-30],[227,-158,400]], \
-    [[227,-158,-30],[340,-158,-30],[227,-158,400]], \
-    [[340,-198,-30],[340,-158,-30],[227,-158,400]]])
+OBS_TABLE = np.array([[[70,-345,10],[70,345,10],[345,345,10]], \
+    [[70,-345,10],[345,-345,10],[345,345,10]]])
+OBS_POLL = np.array([[[235.0,-200,10],[235,-160,10],[235,-160,400]], \
+    [[235,-200,10],[340,-200,10],[235,-160,400]], \
+    [[235,-160,10],[340,-160,10],[235,-160,400]], \
+    [[340,-200,10],[340,-160,10],[235,-160,400]]])
 OBSTACLES = [OBS_TABLE, OBS_POLL]
 
 
@@ -39,7 +39,7 @@ OBSTACLES = [OBS_TABLE, OBS_POLL]
 #sim = Simulation.Simulation()
 #for obs in OBSTACLES:
 #    sim.add_obstacles(obs)
-#PRM = Roadmap.Roadmap(sim,100,np.array([[-90,90],[0,60],[0,60]]))
+#PRM = Roadmap.Roadmap(sim,100,np.array([[-75,75],[0,60],[0,60]]))
 PRM = None # if not using roadmap
 
 # Display poses of all objects
@@ -506,7 +506,7 @@ if __name__ == '__main__':
             data = camera.get_all_poses()[selection - 1]
             target = data[0]
             if target != None:
-                place_ducky(interface,target, 0, True)
+                place_ducky(interface,target, 0, False)
             else:
                 print "Object is not available."
 
