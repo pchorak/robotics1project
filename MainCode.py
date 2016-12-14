@@ -144,39 +144,68 @@ def track(interface, camera, tag_index):
         if data == None:
             return
 
-        # Follow tag while it is in view
-        while data != [None, None] and not req_exit:
-                # From kinematics
-                angles = interface.current_status.angles[0:3]
-                P0t = np.reshape(DobotModel.forward_kinematics(angles), (3,1))
-                R0t = DobotModel.R0T(angles)
+	# Follow tag while it is in view
+	while data != [None, None] and not req_exit:
+	    
+	    # Getting Desired XYZ of end effector
+	    Pct = np.array([[0], [0], [130]])
+	    Roc = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])
+	    Pta = np.matmul(Roc, data[0]) - np.matmul(Roc, Pct)
+	    
+	    # Only move if the change is significant (1mm)
+	    if np.linalg.norm(Pta) > 1:
+		# Current XYZ position
+		p0t = DobotModel.forward_kinematics(interface.current_status.get_angles())
+		# Desired XYZ position
+		target = np.reshape(Pta, (3, 1)) + np.reshape(p0t, (3, 1))
+		move_xyz(interface,target)		
+	    
+	    # Get data
+	    data = camera.get_all_poses()[tag_index]    
+	    
+	    # Try for 10 frames to find the object
+	    for i in range(0,10):
+		if data != [None, None]:
+		    break;
+		else:
+		    time.sleep(.1)
+		    data = camera.get_all_poses()[tag_index]  
+	    
+	    
+	    '''
+	    LOW PASS FILTER VERSION
+	    # From kinematics
+	    angles = interface.current_status.angles[0:3]
+	    P0t = np.reshape(DobotModel.forward_kinematics(angles), (3,1))
+	    R0t = DobotModel.R0T(angles)
 
-                # From calibration
-                Pct = np.array(CAMERA_OFFSET)
-                Rtc = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])
-                R0c = np.matmul(R0t,Rtc)
+	    # From calibration
+	    Pct = np.array(CAMERA_OFFSET)
+	    Rtc = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])
+	    R0c = np.matmul(R0t,Rtc)
 
-                # From camera
-                Pca = np.reshape(data[0], (3,1))
+	    # From camera
+	    Pca = np.reshape(data[0], (3,1))
 
-                # Hover above it (Z offest 5 * marker size)
-                Pca_des = np.array([[0], [0], [5 * REGISTERED_TAGS[tag_index][1]]])
-                # correction = -1*np.matmul(R0c, Pca_des - Pca)
-                P0a_des = P0t + np.matmul(R0c, Pca_des - Pct)
+	    # Hover above it (Z offest 5 * marker size)
+	    Pca_des = np.array([[0], [0], [5 * REGISTERED_TAGS[tag_index][1]]])
+	    # correction = -1*np.matmul(R0c, Pca_des - Pca)
+	    P0a_des = P0t + np.matmul(R0c, Pca_des - Pct)
 
-                # Smoothed estimate
-                if P0a_est is None:
-                    P0a_est = P0a_des # initialize so no movement required
-                P0a =  P0t + np.matmul(R0c, Pca - Pct) # measured
-                P0a_est = alpha*P0a + (1 - alpha)*P0a_est # update estimate with new measurement
+	    # Smoothed estimate
+	    if P0a_est is None:
+		P0a_est = P0a_des # initialize so no movement required
+	    P0a =  P0t + np.matmul(R0c, Pca - Pct) # measured
+	    P0a_est = alpha*P0a + (1 - alpha)*P0a_est # update estimate with new measurement
 
-                # If the change in desired XYZ is notable, move to track it
-                correction = P0a_des - P0a_est
-                if np.linalg.norm(correction) > 1.0:
-                    angles = move_xyz(interface, P0t - correction)
+	    # If the change in desired XYZ is notable, move to track it
+	    correction = P0a_des - P0a_est
+	    if np.linalg.norm(correction) > 1.0:
+		angles = move_xyz(interface, P0t - correction)
 
-                # Get data
-                data = camera.get_all_poses()[tag_index]
+	    # Get data
+	    data = camera.get_all_poses()[tag_index]
+	    '''
 
 
 # Search for AR Tag. DUCKY = 0  DUCKYBOT = 1   OBSTACLE = 2
