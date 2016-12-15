@@ -132,7 +132,7 @@ class Camera(threading.Thread):
         self.thresh_img[:, :, :] = 255.0*np.round(gray_img[:, :, :]/(510.0*self.thresh))
 
         # blur the rounded image
-        blurred_image = cv2.GaussianBlur(self.thresh_img,(5,5),0)
+        #blurred_image = cv2.GaussianBlur(self.thresh_img,(5,5),0)
 
         # find any valid AR tags in the image
         markers = detect_markers(self.thresh_img)

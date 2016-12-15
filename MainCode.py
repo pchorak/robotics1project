@@ -10,7 +10,7 @@ import Simulation
 import Roadmap
 
 #=====DEFINED CONSTANTS=====
-CAMERA_ID = 1
+CAMERA_ID = 0
 VIDEO_MODE = True
 DUCKY = [12345678, 25]
 DUCKYBOT = [16273625, 25] # normally 16273625
@@ -128,7 +128,7 @@ def track(interface, camera, tag_index):
     P0a_est = None # estimate of AR tag position
 
     while not req_exit:
-        # Only enter search if capture_data failed to find tag for 10 consecutive frames
+        # Only enter search if capture_data failed to find tag for 30 consecutive frames
         searching = True
         for x in range(0,30):
             data = camera.get_all_poses()[tag_index]
@@ -162,14 +162,6 @@ def track(interface, camera, tag_index):
 	    
 	    # Get data
 	    data = camera.get_all_poses()[tag_index]    
-	    
-	    # Try for 10 frames to find the object
-	    for i in range(0,10):
-		if data != [None, None]:
-		    break;
-		else:
-		    time.sleep(.1)
-		    data = camera.get_all_poses()[tag_index]  
 	    
 	    
 	    '''
@@ -241,7 +233,7 @@ def search(interface, camera, tag_index = -1, clean_mode = False, path_planning 
 		    # Go to max height above AR tag
                     tmp = np.zeros((3, 1))
                     tmp[:, :] = garbage_xyz[:, :]
-                    tmp[2, 0] = 100
+                    tmp[2, 0] = MAXHEIGHT
                     move_xyz(interface, tmp, True)
 
                     # Go to garbage can
@@ -290,7 +282,7 @@ def search(interface, camera, tag_index = -1, clean_mode = False, path_planning 
 		    # Go to max height above AR tag
                     tmp = np.zeros((3, 1))
                     tmp[:, :] = garbage_xyz[:, :]
-                    tmp[2, 0] = 100
+                    tmp[2, 0] = MAXHEIGHT
                     move_xyz(interface, tmp, True)
 
 		    # Go to garbage can
@@ -331,8 +323,8 @@ def place_ducky(interface, target, joint_4_angle = 0, path_planning = False):
     goal_xyz = get_xyz(interface, target) + np.array([[0], [0], [43]])
 
     # GETTING THE DUCKY
-    # Move 40mm above the ducky
-    ducky_xyz = DUCKY_POS + np.array([[0], [0], [40]])
+    # Move 80mm above the ducky
+    ducky_xyz = DUCKY_POS + np.array([[0], [0], [80]])
     angles = DobotModel.inverse_kinematics(ducky_xyz)
     move_xyz(interface, ducky_xyz, True, -angles[0], path_planning)
 
@@ -349,7 +341,7 @@ def place_ducky(interface, target, joint_4_angle = 0, path_planning = False):
     move_xyz(interface, tmp, True, joint_4_angle, path_planning)
 
     # Move to desired position with pump on
-    move_xyz(interface, goal_xyz, True, joint_4_angle, path_planning)
+    move_xyz(interface, goal_xyz, True, joint_4_angle)
 
     # Release the pump
     move_xyz(interface, goal_xyz, False, joint_4_angle)
@@ -414,7 +406,7 @@ if __name__ == '__main__':
 
     # INTITIALIZING SERIAL INTERFACE
      # 6 Refers to COM7 For Windows, Leave blank for linux or specify a device, example: /dev/ttyACM0
-    interface = SerialInterface.SerialInterface(6)
+    interface = SerialInterface.SerialInterface(5)
 
     # Go to initial starting position
     interface.send_absolute_angles(0,10,10,0)
@@ -581,7 +573,7 @@ if __name__ == '__main__':
             target = None
             # search until tag is found (Loop ensures that search is reactivated if tag is lost)
             while target is None:
-		return_code = search(interface, camera, selection - 1, clean_mode)
+		return_code = search(interface, camera, selection - 1, clean_mode, path_planning)
 		# User requested to exit the program during the search process
 		if return_code == None:
 		    break;

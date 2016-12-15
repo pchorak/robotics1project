@@ -1,6 +1,7 @@
 # Demonstrate path planning with the roadmap
 import numpy as np
 import time
+import matplotlib.pyplot as plt
 
 import Simulation
 import Roadmap
@@ -17,24 +18,35 @@ obstacle = np.array([[[215,-250,-100],[215,250,-100],[215,-250,15]], \
 sim = Simulation.Simulation()
 sim.add_obstacles(table)
 sim.add_obstacles(obstacle)
-prm = Roadmap.Roadmap(sim,150,np.array([[-90,90],[0,60],[0,60]]))
-prm.display()
+prm = Roadmap.Roadmap(sim,200,np.array([[-90,90],[0,60],[0,60]]))
 # path = prm.get_path((45,60,0),(-45,60,0))
-path = prm.get_path((0,0,55),(0,42,26))
-prm.plot_path(path)
+path = prm.get_path((0,10,10),(0,0,55))
+# prm.plot_path(path)
 # sim.display(path[0])
 
-sim.display(path[0])
-interface = SerialInterface.SerialInterface('/dev/ttyACM0')
+interface = SerialInterface.SerialInterface(5)
 time.sleep(2)
 interface.send_absolute_angles(path[0][0],path[0][1],path[0][2],0)
 
-# execute path
+sim.display(path[0])
 fig = plt.gcf()
+fig.canvas.draw()
+plt.pause(0.1)
+
+# execute path
 time.sleep(2)
 for p in path:
     interface.send_absolute_angles(p[0],p[1],p[2],0)
     plt.clf()
     sim.display(p)
     fig.canvas.draw()
-    time.sleep(1)
+    plt.pause(0.1)
+time.sleep(2)
+path = prm.get_path((0,0,55),(0,10,10))
+for p in path:
+    interface.send_absolute_angles(p[0],p[1],p[2],0)
+    plt.clf()
+    sim.display(p)
+    fig.canvas.draw()
+    plt.pause(0.1)
+    
