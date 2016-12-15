@@ -71,6 +71,10 @@ def move_xyz(interface, target, pump_on = False, joint_4_angle = 0, path_plannin
     else:
         start = interface.current_status.angles[0:3]
         path = PRM.get_path(start, angles)
+	if path == [] or path == None:
+	    # No path found, future actions may cause collision! Abort!!!
+	    print "ERROR: No Path Found! Aborting..."
+	    sys.exit()
         for p in path:
             interface.send_absolute_angles(float(p[0]), float(p[1]), float(p[2]), joint_4_angle, interface.MOVE_MODE_JOINTS, pump_on)
 
