@@ -255,7 +255,6 @@ def search(interface, camera, tag_index = -1, clean_mode = False, path_planning 
                     # Search for a specified tag
                     if data[tag_index] != [None, None]:
                         return data[tag_index]
-                    0
 
                 base_angle = base_angle + 5
 
