@@ -147,8 +147,11 @@ def track(interface, camera, tag_index):
 	# Follow tag while it is in view
 	while data != [None, None] and not req_exit:
 	    
-	    # Getting Desired XYZ of end effector
-	    Pct = np.array([[0], [0], [130]])
+	    # === Getting Desired XYZ of end effector ===
+	    # Hover above the tag (Z offest 5 * marker size)
+	    Pct = np.array([[0], [0], [5 * REGISTERED_TAGS[tag_index][1]]])
+	    
+	    # Calculate difference in desired position and actual position
 	    Roc = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])
 	    Pta = np.matmul(Roc, data[0]) - np.matmul(Roc, Pct)
 	    
@@ -179,7 +182,7 @@ def track(interface, camera, tag_index):
 	    # From camera
 	    Pca = np.reshape(data[0], (3,1))
 
-	    # Hover above it (Z offest 5 * marker size)
+	    # Hover above the tag (Z offest 5 * marker size)
 	    Pca_des = np.array([[0], [0], [5 * REGISTERED_TAGS[tag_index][1]]])
 	    # correction = -1*np.matmul(R0c, Pca_des - Pca)
 	    P0a_des = P0t + np.matmul(R0c, Pca_des - Pct)
