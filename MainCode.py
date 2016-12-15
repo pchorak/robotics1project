@@ -436,6 +436,7 @@ if __name__ == '__main__':
     track
     grab ducky
     place ducky
+    search
     search and place
     arm calibration
     touch test
@@ -551,6 +552,14 @@ if __name__ == '__main__':
             # Begin Tracking
             track(interface, camera, selection - 1)
 
+	elif command == "search":
+	    #Which object to search for?
+	    print object_selection
+	    print "Which object to search for?"
+	    selection = int(input(""))
+	    # search until tag is found
+	    search(interface, camera, selection - 1)	
+	    
         elif command == "search and place":
             # Which object to search for?
             print object_selection
