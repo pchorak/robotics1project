@@ -1,4 +1,37 @@
 # Robotics I Project #
+* Team #7, DEPHASE
+* Dylan Elliot, Peter Horak, Andrew Showers
+
+### Interfaces ###
+
+* MainCode.py: starts the main user interface
+  - Set CAMERA_ID based you your computer's webcam (#)
+  - Set DUCKY, DUCKYBOT, etc. based on the AR tag numbers and sizes you are using
+  - Update line 415 to pass the serial port for the Dobot on your machine to the serial interface (e.g. /dev/ttyACM0 on Linux)
+* keyboard_control.py: control the Dobot manually using your keyboard
+  - pass the serial port for the Dobot with the command-line flag "-p $PORT" (e.g. PORT=/dev/ttyACM0 on Linux)
+
+### Contents ###
+* MainCode.py - high-level behavioral code
+
+* keyboard_control.py - command-line interface to control the Dobot
+* Controller.py - wrapper class for the serial interface used by keyboard_control.py
+* SerialInterface.py - class representing the Dobot serial interface (from pyDobot)
+* StatusMessage.py - message class used by SerialInterface.py (from pyDobot)
+
+* AR_Camera.py - wrapper class for the webcam and AR tag detection
+* campose.py - provodes a routine to estimate the camera-end effector offset
+
+* Roadmap.py - class implementing a probabilistic roadmap for path planning
+* Simulation.py - wrapper class to store obstacles and check for collisions
+* intersect.py - this module implements triangle-triangle intersection tests
+* DobotMode.py - this module handles the Dobot kinematics
+* math3D.py - this module calculates rotation matrices
+
+* roadmap_test.py - example code for using the probabilistic roadmap
+* calibration_test.py - example code for using campose.py
+* arm_cal_test.py - partial analysis of data from arm calibration
+
 
 ### Dependencies ###
 
@@ -12,14 +45,9 @@
 * warnings, collections, binascii, argparse, struct, itertools
 * datetime, serial, time, sys, os.path, thread, threading
 
-### Interfaces ###
-
-* MainCode.py
-* keyboard_control.py
-* Example code in roadmap_test.py
-
 ### Tested Environments ###
 
+* Ubuntu 14.04, Python 2.7.12 (OpenCV 3.1.0, SciPy, 0.18.1, Numpy 1.11.2, Matplotlib 1.5.3)
 * Ubuntu 14.04, Python 2.7.6 (OpenCV 2.4.13, SciPy 0.13.3, Numpy 1.11.2, Matplotlib 1.3.1)
 * OS X 10.11.6, IPython 2.7.10 (w/o camera, SciPy 0.13.0b1, Numpy 1.8.0rc1, Matplotlib 1.3.1)
 
@@ -27,4 +55,5 @@
 
 * DobotModel.test()
 * intersect.test()
+* campose.test()
 
