@@ -4,33 +4,33 @@
 
 ### Interfaces ###
 
-* MainCode.py: starts the main user interface
-  - Set CAMERA_ID based you your computer's webcam (#)
-  - Set DUCKY, DUCKYBOT, etc. based on the AR tag numbers and sizes you are using
-  - Update line 415 to pass the serial port for the Dobot on your machine to the serial interface (e.g. /dev/ttyACM0 on Linux)
-* keyboard_control.py: control the Dobot manually using your keyboard
-  - pass the serial port for the Dobot with the command-line flag "-p $PORT" (e.g. PORT=/dev/ttyACM0 on Linux)
+* MainCode.py - starts the main user interface
+    * Set CAMERA_ID based you your computer's webcam (#)
+    * Set DUCKY, DUCKYBOT, etc. based on the AR tag numbers and sizes you are using
+    * Update line 415 to pass the serial port for the Dobot on your machine to the serial interface (e.g. /dev/ttyACM0 on Linux)
+* keyboard_control.py - control the Dobot manually using your keyboard
+    * pass the serial port for the Dobot with the command-line flag "-p $PORT" (e.g. PORT=/dev/ttyACM0 on Linux)
 
 ### Contents ###
 * MainCode.py - high-level behavioral code
-
 * keyboard_control.py - command-line interface to control the Dobot
-* Controller.py - wrapper class for the serial interface used by keyboard_control.py
-* SerialInterface.py - class representing the Dobot serial interface (from pyDobot)
-* StatusMessage.py - message class used by SerialInterface.py (from pyDobot)
-
-* AR_Camera.py - wrapper class for the webcam and AR tag detection
-* campose.py - provodes a routine to estimate the camera-end effector offset
-
-* Roadmap.py - class implementing a probabilistic roadmap for path planning
-* Simulation.py - wrapper class to store obstacles and check for collisions
-* intersect.py - this module implements triangle-triangle intersection tests
-* DobotMode.py - this module handles the Dobot kinematics
-* math3D.py - this module calculates rotation matrices
-
-* roadmap_test.py - example code for using the probabilistic roadmap
-* calibration_test.py - example code for using campose.py
-* arm_cal_test.py - partial analysis of data from arm calibration
+* Serial Interface
+    * Controller.py - wrapper class for the serial interface used by keyboard_control.py
+    * SerialInterface.py - class representing the Dobot serial interface (from pyDobot)
+    * StatusMessage.py - message class used by SerialInterface.py (from pyDobot)
+* Camera
+    * AR_Camera.py - wrapper class for the webcam and AR tag detection
+    * campose.py - provodes a routine to estimate the camera-end effector offset
+* Path Planning
+    * Roadmap.py - class implementing a probabilistic roadmap for path planning
+    * Simulation.py - wrapper class to store obstacles and check for collisions
+    * intersect.py - this module implements triangle-triangle intersection tests
+    * DobotMode.py - this module handles the Dobot kinematics
+    * math3D.py - this module calculates rotation matrices
+* Examples
+    * roadmap_test.py - example code for using the probabilistic roadmap
+    * calibration_test.py - example code for using campose.py
+    * arm_cal_test.py - partial analysis of data from arm calibration
 
 
 ### Dependencies ###
