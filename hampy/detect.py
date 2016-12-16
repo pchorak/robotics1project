@@ -13,13 +13,14 @@ def detect_markers(img, marker_ids=None):
     width, height, _ = img.shape
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
     edges = cv2.Canny(gray, 10, 100)
+    
+    # OpenCV Version 3.1.0 Version
     _, contours, _ = cv2.findContours(edges.copy(),
                                       cv2.RETR_TREE,
                                       cv2.CHAIN_APPROX_NONE)
 
-    # if not version 3.x
+    # OpenCV - Latest Stable Version (2.x)
     #contours, _ = cv2.findContours(edges.copy(),
     #                                  cv2.RETR_TREE,
     #                                  cv2.CHAIN_APPROX_NONE)

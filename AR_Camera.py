@@ -57,12 +57,12 @@ class Camera(threading.Thread):
         frameHeight = 480
 
         if cv2.__version__[0] == "2":
-            # Latest Stable Version
+            # Latest Stable Version (2.x)
             self.cap.set(cv2.cv.CV_CAP_PROP_FPS, frameRate)
             self.cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, frameWidth)
             self.cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, frameHeight)
         else:
-            # version 3.1.0 (Dylans Version)
+            # version 3.1.0 (BETA)
             self.cap.set(cv2.CAP_PROP_FPS, frameRate)
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, frameWidth)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, frameHeight)
