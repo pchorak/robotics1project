@@ -1,3 +1,6 @@
+# Origin: Nikolas Engelhard, https://github.com/NikolasE/pyDobot
+# Modified by Peter Horak, Dylan Elliot, Andrew Showers (Fall 2016)
+
 import struct
 import binascii
 
