@@ -1,4 +1,5 @@
-# Robotics I Project # * Team #7, DEPHASE
+# Robotics I Project #
+* Team #7, DEPHASE
 * Dylan Elliot, Peter Horak, Andrew Showers
 
 ### Interfaces ###
