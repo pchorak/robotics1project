@@ -1,14 +1,12 @@
-# Robotics I Project #
-* Team #7, DEPHASE
+# Robotics I Project # * Team #7, DEPHASE
 * Dylan Elliot, Peter Horak, Andrew Showers
 
 ### Interfaces ###
 
-* MainCode.py - starts the main user interface
-    * Set CAMERA_ID based you your computer's webcam (#)
-    * Set DUCKY, DUCKYBOT, etc. based on the AR tag numbers and sizes you are using
+* **MainCode.py** - starts the main user interface
+    * Need to set constants such as CAMERA_ID, DUCKY (AR tag #), etc. based on your setup
     * Update line 415 to pass the serial port for the Dobot on your machine to the serial interface (e.g. /dev/ttyACM0 on Linux)
-* keyboard_control.py - control the Dobot manually using your keyboard
+* **keyboard_control.py** - control the Dobot manually using your keyboard
     * pass the serial port for the Dobot with the command-line flag "-p $PORT" (e.g. PORT=/dev/ttyACM0 on Linux)
 
 ### Contents ###
