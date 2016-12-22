@@ -1,6 +1,7 @@
 # Robotics I Project #
 * Team #7, DEPHASE
 * Dylan Elliot, Peter Horak, Andrew Showers
+* Description: Our project provides integrated AR tag detection, kinematics, and path planning with collision detection for a Dobot Arm V1.0. It supports a command-line interface for high-level behavior (stacking, searching, pick-and-place, etc.)
 
 ### Interfaces ###
 
