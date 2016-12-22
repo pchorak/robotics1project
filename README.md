@@ -25,7 +25,7 @@
     * **Roadmap.py** - class implementing a probabilistic roadmap for path planning
     * **Simulation.py** - wrapper class to store obstacles and check for collisions
     * **intersect.py** - this module implements triangle-triangle intersection tests
-    * **DobotMode.py** - this module handles the Dobot kinematics
+    * **DobotModel.py** - this module handles the Dobot kinematics
     * **math3D.py** - this module calculates rotation matrices
 * Examples
     * **roadmap_test.py** - example code for using the probabilistic roadmap
